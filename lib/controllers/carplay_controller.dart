@@ -153,8 +153,10 @@ class FlutterCarPlayController {
     l1:
     for (var t in templateHistory) {
       if (t is CPListTemplate) {
-        barButton = t.backButton;
-        break l1;
+        if (t.backButton?.uniqueId == elementId) {
+          barButton = t.backButton;
+          break l1;
+        }
       }
     }
     if (barButton != null) barButton.onPress();
