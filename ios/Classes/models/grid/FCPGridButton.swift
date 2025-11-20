@@ -40,9 +40,4 @@ class FCPGridButton {
     self.isEnabled = enabled
     self._super?.isEnabled = enabled
   }
-
-  public func updateTitleVariants(_ titleVariants: [String]) {
-    self.titleVariants = titleVariants
-    self._super?.titleVariants = titleVariants
-  }
 }
