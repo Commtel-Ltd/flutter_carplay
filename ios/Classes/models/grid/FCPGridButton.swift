@@ -36,7 +36,7 @@ class FCPGridButton {
     return gridButton
   }
 
-  func setEnabled(_ enabled: Bool) {
+  public func setEnabled(_ enabled: Bool) {
     self.isEnabled = enabled
     self._super?.isEnabled = enabled
   }

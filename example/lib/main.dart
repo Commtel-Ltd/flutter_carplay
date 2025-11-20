@@ -470,8 +470,7 @@ class _MyAppState extends State<MyApp> {
     Future.delayed(const Duration(seconds: 3), () {
       print('Toggling grid button states...');
       for (var button in gridButtons) {
-        button.isEnabled = !button.isEnabled;
-        FlutterCarPlayController.updateCPGridButton(button);
+        button.setEnabled(!button.isEnabled);
       }
     });
   }

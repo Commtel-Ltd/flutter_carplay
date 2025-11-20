@@ -1,3 +1,4 @@
+import 'package:flutter_carplay/controllers/carplay_controller.dart';
 import 'package:uuid/uuid.dart';
 
 /// A grid button object displayed on a grid template.
@@ -42,5 +43,12 @@ class CPGridButton {
 
   String get uniqueId {
     return _elementId;
+  }
+
+  /// Updates the enabled state of this grid button.
+  /// Call this method to enable or disable the button in the CarPlay interface.
+  void setEnabled(bool enabled) {
+    isEnabled = enabled;
+    FlutterCarPlayController.updateCPGridButton(this);
   }
 }
