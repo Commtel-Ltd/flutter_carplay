@@ -43,6 +43,6 @@ class FCPGridButton {
 
   public func updateTitleVariants(_ titleVariants: [String]) {
     self.titleVariants = titleVariants
-    self._super?.updateTitleVariants(titleVariants)
+    self._super?.titleVariants = titleVariants
   }
 }
