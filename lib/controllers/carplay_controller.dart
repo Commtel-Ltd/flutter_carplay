@@ -101,13 +101,13 @@ class FlutterCarPlayController {
             case CPTabBarTemplate _:
               for (var t in h.templates) {
                 if (t is CPGridTemplate) {
-                  for (var b in t.buttons) {
+                  final gridTemplate = t;
+                  for (var b in gridTemplate.buttons) {
                     if (b.uniqueId == updatedGridButton.uniqueId) {
-                      (currentRootTemplate as CPTabBarTemplate)
-                          .templates[(currentRootTemplate as CPTabBarTemplate)
-                              .templates
-                              .indexOf(t)]
-                          .buttons[t.buttons.indexOf(b)] = updatedGridButton;
+                      final tabBar = currentRootTemplate as CPTabBarTemplate;
+                      final templateIndex = tabBar.templates.indexOf(t);
+                      (tabBar.templates[templateIndex] as CPGridTemplate)
+                          .buttons[gridTemplate.buttons.indexOf(b)] = updatedGridButton;
                       break l1;
                     }
                   }
