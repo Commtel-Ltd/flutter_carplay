@@ -90,6 +90,48 @@ class FlutterCarPlayController {
     });
   }
 
+  static void updateCPGridButton(CPGridButton updatedGridButton) {
+    _methodChannel.invokeMethod('updateGridButton', <String, dynamic>{
+      ...updatedGridButton.toJson(),
+    }).then((value) {
+      if (value) {
+        l1:
+        for (var h in templateHistory) {
+          switch (h) {
+            case CPTabBarTemplate _:
+              for (var t in h.templates) {
+                if (t is CPGridTemplate) {
+                  for (var b in t.buttons) {
+                    if (b.uniqueId == updatedGridButton.uniqueId) {
+                      (currentRootTemplate as CPTabBarTemplate)
+                          .templates[(currentRootTemplate as CPTabBarTemplate)
+                              .templates
+                              .indexOf(t)]
+                          .buttons[t.buttons.indexOf(b)] = updatedGridButton;
+                      break l1;
+                    }
+                  }
+                }
+              }
+              break;
+            case CPGridTemplate _:
+              for (var b in h.buttons) {
+                if (b.uniqueId == updatedGridButton.uniqueId) {
+                  (currentRootTemplate as CPGridTemplate)
+                      .buttons[(currentRootTemplate as CPGridTemplate)
+                          .buttons
+                          .indexOf(b)] = updatedGridButton;
+                  break l1;
+                }
+              }
+              break;
+            default:
+          }
+        }
+      }
+    });
+  }
+
   void addTemplateToHistory(CPTemplate template) {
     if (template is CPTabBarTemplate ||
         template is CPGridTemplate ||

@@ -32,6 +32,10 @@ class FCPGridTemplate {
     self._super = gridTemplate
     return gridTemplate
   }
+
+  func getButtons() -> [FCPGridButton] {
+    return self.objcButtons
+  }
 }
 
 @available(iOS 14.0, *)

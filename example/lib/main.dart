@@ -437,29 +437,43 @@ class _MyAppState extends State<MyApp> {
       return;
     }
 
+    // Create buttons with unique references
+    final gridButtons = [
+      for (var i = 1; i < 9; i++)
+        CPGridButton(
+          titleVariants: ['Item $i'],
+          // ----- TRADEMARKS RIGHTS INFORMATION BEGIN -----
+          // The official Flutter logo is used from the link below.
+          // For more information, please visit and read
+          // Flutter Brand Guidelines Website: https://flutter.dev/brand
+          //
+          // FLUTTER AND THE RELATED LOGO ARE TRADEMARKS OF Google LLC.
+          // WE ARE NOT ENDORSED BY OR AFFILIATED WITH Google LLC.
+          // ----- TRADEMARKS RIGHTS INFORMATION END -----
+          image: 'images/logo_flutter_1080px_clr.png',
+          // Disable every other button initially
+          isEnabled: i % 2 == 1,
+          onPress: () {
+            print('Grid Button $i pressed');
+          },
+        ),
+    ];
+
     FlutterCarplay.push(
       template: CPGridTemplate(
         title: 'Grid Template',
-        buttons: [
-          for (var i = 1; i < 9; i++)
-            CPGridButton(
-              titleVariants: ['Item $i'],
-              // ----- TRADEMARKS RIGHTS INFORMATION BEGIN -----
-              // The official Flutter logo is used from the link below.
-              // For more information, please visit and read
-              // Flutter Brand Guidelines Website: https://flutter.dev/brand
-              //
-              // FLUTTER AND THE RELATED LOGO ARE TRADEMARKS OF Google LLC.
-              // WE ARE NOT ENDORSED BY OR AFFILIATED WITH Google LLC.
-              // ----- TRADEMARKS RIGHTS INFORMATION END -----
-              image: 'images/logo_flutter_1080px_clr.png',
-              onPress: () {
-                print('Grid Button $i pressed');
-              },
-            ),
-        ],
+        buttons: gridButtons,
       ),
     );
+
+    // Example: Toggle button states after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      print('Toggling grid button states...');
+      for (var button in gridButtons) {
+        button.isEnabled = !button.isEnabled;
+        FlutterCarPlayController.updateCPGridButton(button);
+      }
+    });
   }
 
   void openListTemplate() {

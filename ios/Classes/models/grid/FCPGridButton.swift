@@ -13,11 +13,13 @@ class FCPGridButton {
   private(set) var elementId: String
   private var titleVariants: [String]
   private var image: String
-  
+  private var isEnabled: Bool
+
   init(obj: [String : Any]) {
     self.elementId = obj["_elementId"] as! String
     self.titleVariants = obj["titleVariants"] as! [String]
     self.image = obj["image"] as! String
+    self.isEnabled = obj["isEnabled"] as? Bool ?? true
   }
   
   var get: CPGridButton {
@@ -29,8 +31,13 @@ class FCPGridButton {
                                          data: ["elementId": self.elementId])
       }
     })
-    gridButton.isEnabled = true
+    gridButton.isEnabled = self.isEnabled
     self._super = gridButton
     return gridButton
+  }
+
+  func setEnabled(_ enabled: Bool) {
+    self.isEnabled = enabled
+    self._super?.isEnabled = enabled
   }
 }

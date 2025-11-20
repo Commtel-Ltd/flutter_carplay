@@ -19,6 +19,10 @@ class CPGridButton {
   /// uses the first image in the animation sequence.**
   final String image;
 
+  /// A Boolean value that enables and disables the grid button.
+  /// Defaults to true.
+  bool isEnabled;
+
   /// Fired after the user taps the button.
   final Function() onPress;
 
@@ -26,12 +30,14 @@ class CPGridButton {
     required this.titleVariants,
     required this.image,
     required this.onPress,
+    this.isEnabled = true,
   });
 
   Map<String, dynamic> toJson() => {
         '_elementId': _elementId,
         'titleVariants': titleVariants,
         'image': image,
+        'isEnabled': isEnabled,
       };
 
   String get uniqueId {

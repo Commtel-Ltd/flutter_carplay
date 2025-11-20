@@ -3,6 +3,7 @@ enum FCPChannelTypes {
   setRootTemplate,
   forceUpdateRootTemplate,
   updateListItem,
+  updateGridButton,
   onFCPListItemSelected,
   onFCPListItemSelectedComplete,
   onFCPAlertActionPressed,
