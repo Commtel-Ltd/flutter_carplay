@@ -473,6 +473,14 @@ class _MyAppState extends State<MyApp> {
         button.setEnabled(!button.isEnabled);
       }
     });
+
+    // Example: Update button titles after 6 seconds
+    Future.delayed(const Duration(seconds: 6), () {
+      print('Updating grid button titles...');
+      for (var i = 0; i < gridButtons.length; i++) {
+        gridButtons[i].updateTitle('Updated ${i + 1}');
+      }
+    });
   }
 
   void openListTemplate() {

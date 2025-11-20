@@ -151,9 +151,13 @@ public class SwiftFlutterCarplayPlugin: NSObject, FlutterPlugin {
       }
       let elementId = args["_elementId"] as! String
       let isEnabled = args["isEnabled"] as? Bool
+      let titleVariants = args["titleVariants"] as? [String]
       SwiftFlutterCarplayPlugin.findGridButton(elementId: elementId, actionWhenFound: { gridButton in
         if let isEnabled = isEnabled {
           gridButton.setEnabled(isEnabled)
+        }
+        if let titleVariants = titleVariants {
+          gridButton.updateTitleVariants(titleVariants)
         }
       })
       result(true)
