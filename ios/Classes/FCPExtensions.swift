@@ -15,6 +15,11 @@ extension UIImage {
 
   @available(iOS 14.0, *)
   func fromCorrectSource(name: String) -> UIImage {
+    // Early return for empty string
+    if name.isEmpty {
+      return UIImage(systemName: "questionmark")!
+    }
+
     // 0. Base64 support (raw or data URL)
     if name.starts(with: "data:image") || name.count > 100 {
       if let img = fromBase64(dataString: name) {
