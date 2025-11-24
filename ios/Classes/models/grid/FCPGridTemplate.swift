@@ -14,7 +14,9 @@ class FCPGridTemplate {
   private var title: String
   private var buttons: [CPGridButton]
   private var objcButtons: [FCPGridButton]
-  
+  private var objcBackButton: FCPBarButton?
+  private var backButton: CPBarButton?
+
   init(obj: [String : Any]) {
     self.elementId = obj["_elementId"] as! String
     self.title = obj["title"] as! String
@@ -24,10 +26,16 @@ class FCPGridTemplate {
     self.buttons = self.objcButtons.map {
       $0.get
     }
+    let backButtonData = obj["backButton"] as? [String : Any]
+    if backButtonData != nil {
+      self.objcBackButton = FCPBarButton(obj: backButtonData!)
+      self.backButton = self.objcBackButton?.get
+    }
   }
-  
+
   var get: CPTemplate {
     let gridTemplate = CPGridTemplate.init(title: self.title, gridButtons: self.buttons)
+    gridTemplate.backButton = self.backButton
     gridTemplate.elementId = self.elementId
     self._super = gridTemplate
     return gridTemplate

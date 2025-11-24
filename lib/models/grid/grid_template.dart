@@ -1,3 +1,4 @@
+import 'package:flutter_carplay/models/button/bar_button.dart';
 import 'package:flutter_carplay/models/grid/grid_button.dart';
 import 'package:uuid/uuid.dart';
 
@@ -14,16 +15,24 @@ class CPGridTemplate implements CPTemplate {
   /// The array of grid buttons as [CPGridButton] displayed on the template.
   final List<CPGridButton> buttons;
 
+  /// Back button object
+  final CPBarButton? backButton;
+
   /// Creates [CPGridTemplate] in order to display a grid of items as buttons.
   /// When creating the grid template, provide an array of [CPGridButton] objects.
   /// Each button must contain a title that is shown in the grid template's navigation bar.
-  CPGridTemplate({required this.title, required this.buttons});
+  CPGridTemplate({
+    required this.title,
+    required this.buttons,
+    this.backButton,
+  });
 
   @override
   Map<String, dynamic> toJson() => {
         '_elementId': _elementId,
         'title': title,
         'buttons': buttons.map((e) => e.toJson()).toList(),
+        'backButton': backButton?.toJson(),
       };
 
   @override

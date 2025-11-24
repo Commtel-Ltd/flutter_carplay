@@ -197,6 +197,12 @@ class FlutterCarPlayController {
           break l1;
         }
       }
+      if (t is CPGridTemplate) {
+        if (t.backButton?.uniqueId == elementId) {
+          barButton = t.backButton;
+          break l1;
+        }
+      }
     }
     if (barButton != null) barButton.onPress();
   }
