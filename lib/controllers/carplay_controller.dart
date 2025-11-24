@@ -117,10 +117,7 @@ class FlutterCarPlayController {
             case CPGridTemplate _:
               for (var b in h.buttons) {
                 if (b.uniqueId == updatedGridButton.uniqueId) {
-                  (currentRootTemplate as CPGridTemplate)
-                      .buttons[(currentRootTemplate as CPGridTemplate)
-                          .buttons
-                          .indexOf(b)] = updatedGridButton;
+                  h.buttons[h.buttons.indexOf(b)] = updatedGridButton;
                   break l1;
                 }
               }
