@@ -15,5 +15,7 @@ enum class FAAChannelTypes {
     popToRootTemplate,
     onListItemSelected,
     onListItemSelectedComplete,
+    onGridItemSelected,
+    onGridItemSelectedComplete,
     onScreenBackButtonPressed,
 }

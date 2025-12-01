@@ -4,6 +4,8 @@ import androidx.car.app.CarContext
 import androidx.car.app.model.Action
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.CarText
+import androidx.car.app.model.GridItem
+import androidx.car.app.model.GridTemplate
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.SectionedItemList
@@ -11,6 +13,8 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
+import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridItem
+import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridTemplate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -90,8 +94,12 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                     )
 
                     FAAChannelTypes.onListItemSelectedComplete.name
-
                         -> onListItemSelectedComplete(
+                        call, result
+                    )
+
+                    FAAChannelTypes.onGridItemSelectedComplete.name
+                        -> onGridItemSelectedComplete(
                         call, result
                     )
 
@@ -158,6 +166,12 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         result.success(true)
     }
 
+    private fun onGridItemSelectedComplete(
+        call: MethodCall, result: MethodChannel.Result
+    ) {
+        result.success(true)
+    }
+
     private fun pushTemplate(
         call: MethodCall, result: MethodChannel.Result
     ) {
@@ -171,6 +185,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         pluginScope.launch {
             val template = when (runtimeType) {
                 "FAAListTemplate" -> getListTemplate(
+                    call, result, data
+                )
+
+                "FAAGridTemplate" -> getGridTemplate(
                     call, result, data
                 )
 
@@ -223,6 +241,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         pluginScope.launch {
             val template = when (runtimeType) {
                 "FAAListTemplate" -> getListTemplate(
+                    call, result, data, false
+                )
+
+                "FAAGridTemplate" -> getGridTemplate(
                     call, result, data, false
                 )
 
@@ -309,6 +331,89 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             }
         }
         return rowBuilder.build()
+    }
+
+    /**
+     * Creates an Android Auto GridTemplate from the Dart AAGridTemplate data.
+     *
+     * According to Android Auto docs:
+     * - Grid items are displayed in a grid layout
+     * - Minimum 6 items can be shown (varies by vehicle)
+     * - Each item can have an image, title, and optional text
+     * - Images default to IMAGE_TYPE_LARGE (can also use IMAGE_TYPE_ICON)
+     */
+    private suspend fun getGridTemplate(
+        call: MethodCall,
+        result: MethodChannel.Result,
+        data: Map<String, Any?>,
+        addBackButton: Boolean = true
+    ): Template {
+        val template = FAAGridTemplate.fromJson(data)
+        val gridTemplateBuilder = GridTemplate.Builder()
+
+        // Set title if provided
+        if (template.title.isNotEmpty()) {
+            gridTemplateBuilder.setTitle(template.title)
+        }
+
+        if (template.items.isEmpty()) {
+            gridTemplateBuilder.setLoading(true)
+        } else {
+            gridTemplateBuilder.setLoading(false)
+            val itemListBuilder = ItemList.Builder()
+
+            for (item in template.items) {
+                itemListBuilder.addItem(createGridItem(item))
+            }
+
+            gridTemplateBuilder.setSingleList(itemListBuilder.build())
+        }
+
+        if (addBackButton) {
+            gridTemplateBuilder.setHeaderAction(Action.BACK)
+        }
+
+        return gridTemplateBuilder.build()
+    }
+
+    /**
+     * Creates an Android Auto GridItem from an FAAGridItem.
+     *
+     * According to Android Auto docs:
+     * - GridItem requires either a title or an image
+     * - IMAGE_TYPE_LARGE: Images scaled to fit 64x64 dp bounding box
+     * - IMAGE_TYPE_ICON: Icons scaled to fit 64x64 dp bounding box
+     * - Text is optional secondary content
+     */
+    private suspend fun createGridItem(item: FAAGridItem): GridItem {
+        val gridItemBuilder = GridItem.Builder()
+
+        // Set title (required unless image is set)
+        gridItemBuilder.setTitle(CarText.create(item.title))
+
+        // Set optional text (secondary line)
+        item.text?.let {
+            gridItemBuilder.setText(CarText.create(it))
+        }
+
+        // Set image with IMAGE_TYPE_LARGE for better visibility
+        item.image?.let {
+            loadCarImageAsync(it)?.let { carIcon ->
+                gridItemBuilder.setImage(carIcon, GridItem.IMAGE_TYPE_LARGE)
+            }
+        }
+
+        // Set click listener if enabled
+        if (item.isOnPressListenerActive && item.isEnabled) {
+            gridItemBuilder.setOnClickListener {
+                sendEvent(
+                    type = FAAChannelTypes.onGridItemSelected.name,
+                    data = mapOf("elementId" to item.elementId)
+                )
+            }
+        }
+
+        return gridItemBuilder.build()
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {

@@ -64,6 +64,11 @@ class FlutterAndroidAuto {
             event['data']['elementId'],
           );
           break;
+        case FAAChannelTypes.onGridItemSelected:
+          _androidAutoController.processFAAGridItemSelectedChannel(
+            event['data']['elementId'],
+          );
+          break;
         case FAAChannelTypes.onScreenBackButtonPressed:
           FlutterAndroidAutoController.templateHistory.removeWhere(
             (AATemplate item) => item.uniqueId == event['data']['elementId'],

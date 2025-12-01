@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_carplay/constants/private_constants.dart';
 
+import '../aa_models/grid/grid_item.dart';
 import '../aa_models/list/list_item.dart';
 import '../aa_models/template.dart';
 import '../helpers/auto_android_helper.dart';
@@ -98,6 +99,23 @@ class FlutterAndroidAutoController {
           listItem.uniqueId,
         ),
         listItem,
+      );
+    }
+  }
+
+  /// Processes grid item selection events from Android Auto.
+  void processFAAGridItemSelectedChannel(String elementId) {
+    final AAGridItem? gridItem = _androidAutoHelper.findAAGridItem(
+      templates: templateHistory,
+      elementId: elementId,
+    );
+    if (gridItem != null && gridItem.onPress != null) {
+      gridItem.onPress!(
+        () => flutterToNativeModule(
+          FAAChannelTypes.onGridItemSelectedComplete,
+          gridItem.uniqueId,
+        ),
+        gridItem,
       );
     }
   }

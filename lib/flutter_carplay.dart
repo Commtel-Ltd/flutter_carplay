@@ -1,3 +1,6 @@
+export 'package:flutter_carplay/aa_models/grid/grid_item.dart' show AAGridItem;
+export 'package:flutter_carplay/aa_models/grid/grid_template.dart'
+    show AAGridTemplate;
 export 'package:flutter_carplay/aa_models/list/list_item.dart' show AAListItem;
 export 'package:flutter_carplay/aa_models/list/list_section.dart'
     show AAListSection;
