@@ -36,8 +36,8 @@ suspend fun loadCarImageAsync(imagePath: String): CarIcon? {
     return withContext(Dispatchers.IO) {
         try {
             val bitmap = when {
-                // Base64 encoded image (data URL or raw base64)
-                imagePath.startsWith("data:image") || imagePath.length > 100 -> {
+                // Base64 encoded image (data URL format)
+                imagePath.startsWith("data:image") -> {
                     loadFromBase64(imagePath)
                 }
                 // HTTP/HTTPS URL
@@ -47,6 +47,10 @@ suspend fun loadCarImageAsync(imagePath: String): CarIcon? {
                 // Local file path
                 imagePath.startsWith("file://") -> {
                     loadFromFile(imagePath)
+                }
+                // Raw base64 (long string without other prefixes)
+                imagePath.length > 200 && !imagePath.contains("/") && !imagePath.contains(".") -> {
+                    loadFromBase64(imagePath)
                 }
                 // Flutter asset (default)
                 else -> {

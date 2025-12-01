@@ -380,15 +380,16 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
      * Creates an Android Auto GridItem from an FAAGridItem.
      *
      * According to Android Auto docs:
-     * - GridItem requires either a title or an image
+     * - GridItem requires an image (not optional for grid items)
      * - IMAGE_TYPE_LARGE: Images scaled to fit 64x64 dp bounding box
      * - IMAGE_TYPE_ICON: Icons scaled to fit 64x64 dp bounding box
      * - Text is optional secondary content
+     * - Cannot set loading state and image at the same time
      */
     private suspend fun createGridItem(item: FAAGridItem): GridItem {
         val gridItemBuilder = GridItem.Builder()
 
-        // Set title (required unless image is set)
+        // Set title
         gridItemBuilder.setTitle(CarText.create(item.title))
 
         // Set optional text (secondary line)
@@ -396,10 +397,19 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             gridItemBuilder.setText(CarText.create(it))
         }
 
-        // Set image with IMAGE_TYPE_LARGE for better visibility
-        item.image?.let {
-            loadCarImageAsync(it)?.let { carIcon ->
-                gridItemBuilder.setImage(carIcon, GridItem.IMAGE_TYPE_LARGE)
+        // Determine image path - use fallback immediately if no valid image provided
+        val imagePath = if (!item.image.isNullOrEmpty()) item.image else "assets/question_mark.png"
+
+        // Load the image (either provided or fallback)
+        val carIcon = loadCarImageAsync(imagePath)
+
+        // GridItem requires an image - set it
+        if (carIcon != null) {
+            gridItemBuilder.setImage(carIcon, GridItem.IMAGE_TYPE_LARGE)
+        } else {
+            // Fallback failed too - use the fallback asset as last resort
+            loadCarImageAsync("assets/question_mark.png")?.let {
+                gridItemBuilder.setImage(it, GridItem.IMAGE_TYPE_LARGE)
             }
         }
 
