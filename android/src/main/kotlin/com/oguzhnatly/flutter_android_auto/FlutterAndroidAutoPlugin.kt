@@ -52,6 +52,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        FAAHelpers.flutterPluginBinding = flutterPluginBinding
         channel = MethodChannel(
             flutterPluginBinding.binaryMessenger,
             FAAHelpers.makeFCPChannelId("")
@@ -295,7 +296,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
 
         item.imageUrl?.let {
             loadCarImageAsync(it)?.let { carIcon ->
-                rowBuilder.setImage(carIcon)
+                rowBuilder.setImage(carIcon, Row.IMAGE_TYPE_LARGE)
             }
         }
 
@@ -321,5 +322,6 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)
+        FAAHelpers.flutterPluginBinding = null
     }
 }
