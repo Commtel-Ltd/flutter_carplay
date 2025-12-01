@@ -27,13 +27,18 @@ class AAGridTemplate implements AATemplate {
   /// but the actual limit varies by vehicle.
   final List<AAGridItem> items;
 
+  /// Whether to show the back button in the header.
+  final bool showBackButton;
+
   /// Creates [AAGridTemplate] to display a grid of items.
   ///
   /// [title] - The title shown in the header
   /// [items] - List of [AAGridItem] objects to display in the grid
+  /// [showBackButton] - Whether to show the back button (default: false)
   AAGridTemplate({
     required this.title,
     required this.items,
+    this.showBackButton = false,
   }) : _elementId = const Uuid().v4();
 
   @override
@@ -44,5 +49,6 @@ class AAGridTemplate implements AATemplate {
         '_elementId': _elementId,
         'title': title,
         'items': items.map((AAGridItem item) => item.toJson()).toList(),
+        'showBackButton': showBackButton,
       };
 }

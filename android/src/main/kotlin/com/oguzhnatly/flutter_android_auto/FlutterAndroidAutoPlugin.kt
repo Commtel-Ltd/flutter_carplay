@@ -369,7 +369,8 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             gridTemplateBuilder.setSingleList(itemListBuilder.build())
         }
 
-        if (addBackButton) {
+        // Use template's showBackButton property, or fall back to addBackButton parameter
+        if (template.showBackButton || addBackButton) {
             gridTemplateBuilder.setHeaderAction(Action.BACK)
         }
 
