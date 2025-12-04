@@ -68,6 +68,27 @@ class FlutterCarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelega
     template.updateTemplates(templateFromHistory.getRawTemplates())
   }
 
+  // https://developer.apple.com/documentation/carplay/cptabbartemplate/selectedindex
+  static public func selectTabBarIndex(elementId: String, index: Int) -> Bool {
+    guard let interfaceController = self.interfaceController else {
+        NSLog("FlutterCarPlaySceneDelegate - selectTabBarIndex: Interface controller not available.")
+        return false
+    }
+
+    guard let template = interfaceController.templates.first(where: { $0.elementId == elementId }) as? CPTabBarTemplate else {
+        NSLog("FlutterCarPlaySceneDelegate - selectTabBarIndex: TabBar template with elementId \(elementId) not found.")
+        return false
+    }
+
+    guard index >= 0 && index < template.templates.count else {
+        NSLog("FlutterCarPlaySceneDelegate - selectTabBarIndex: Index \(index) is out of bounds. Template has \(template.templates.count) tabs.")
+        return false
+    }
+
+    template.selectedIndex = index
+    return true
+  }
+
   // Fired when just before the carplay become active
   func sceneDidBecomeActive(_ scene: UIScene) {
     SwiftFlutterCarplayPlugin.onCarplayConnectionChange(status: FCPConnectionTypes.connected)

@@ -228,6 +228,28 @@ class FlutterCarplay {
     return;
   }
 
+  /// Programmatically selects a tab at the given [index] on the [CPTabBarTemplate]
+  /// with the specified [elementId].
+  ///
+  /// This uses the native iOS `selectedIndex` property on CPTabBarTemplate.
+  ///
+  /// - [elementId] is the unique identifier of the CPTabBarTemplate.
+  /// - [index] is the zero-based index of the tab to select.
+  ///
+  /// Returns `true` if the tab was successfully selected, `false` otherwise.
+  Future<bool> selectTabBarIndex({
+    required String elementId,
+    required int index,
+  }) async {
+    final bool? isCompleted = await _carPlayController.methodChannel
+        .invokeMethod('selectTabBarIndex', <String, dynamic>{
+      'elementId': elementId,
+      'index': index,
+    });
+
+    return isCompleted ?? false;
+  }
+
   /// Getter for current root template.
   /// Return one of type [CPTabBarTemplate], [CPGridTemplate], [CPListTemplate]
   static dynamic get rootTemplate {

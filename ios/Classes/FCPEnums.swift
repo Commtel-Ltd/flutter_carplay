@@ -34,6 +34,7 @@ enum FCPChannelTypes {
   static let onTextButtonPressed = "onTextButtonPressed"
   static let popToRootTemplate = "popToRootTemplate"
   static let onScreenBackButtonPressed = "onScreenBackButtonPressed"
+  static let selectTabBarIndex = "selectTabBarIndex"
 }
 
 enum FCPAlertActionTypes {
