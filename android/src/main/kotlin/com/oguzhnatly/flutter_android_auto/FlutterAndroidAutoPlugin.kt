@@ -9,15 +9,18 @@ import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.GridTemplate
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.ListTemplate
+import androidx.car.app.model.MessageTemplate
 import androidx.car.app.model.SectionedItemList
 import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
+import com.oguzhnatly.flutter_android_auto.models.FAAAction
 import com.oguzhnatly.flutter_android_auto.models.FAAHeaderAction
 import com.oguzhnatly.flutter_android_auto.models.FAAHeaderActionType
 import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridItem
 import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridTemplate
+import com.oguzhnatly.flutter_android_auto.models.message.FAAMessageTemplate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -195,6 +198,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                     call, result, data
                 )
 
+                "FAAMessageTemplate" -> getMessageTemplate(
+                    call, result, data
+                )
+
                 else -> null
             }
             if (template == null) {
@@ -248,6 +255,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                 )
 
                 "FAAGridTemplate" -> getGridTemplate(
+                    call, result, data, false
+                )
+
+                "FAAMessageTemplate" -> getMessageTemplate(
                     call, result, data, false
                 )
 
@@ -456,6 +467,93 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         }
 
         return gridItemBuilder.build()
+    }
+
+    /**
+     * Creates an Android Auto MessageTemplate from the Dart AAMessageTemplate data.
+     *
+     * According to Android Auto docs:
+     * - MessageTemplate displays a message with optional title, icon, and actions
+     * - Up to 2 action buttons can be added
+     * - Can show a loading state instead of the message
+     * - Cannot set both loading and message/icon at the same time
+     */
+    private suspend fun getMessageTemplate(
+        call: MethodCall,
+        result: MethodChannel.Result,
+        data: Map<String, Any?>,
+        addBackButton: Boolean = true
+    ): Template {
+        val template = FAAMessageTemplate.fromJson(data)
+        val messageTemplateBuilder = MessageTemplate.Builder(template.message)
+
+        // Set optional title
+        template.title?.let {
+            messageTemplateBuilder.setTitle(it)
+        }
+
+        // Set loading state or icon (cannot have both)
+        if (template.isLoading) {
+            messageTemplateBuilder.setLoading(true)
+        } else {
+            // Set optional icon
+            template.icon?.let { iconPath ->
+                loadCarImageAsync(iconPath)?.let { carIcon ->
+                    messageTemplateBuilder.setIcon(carIcon)
+                }
+            }
+        }
+
+        // Set optional debug message
+        template.debugMessage?.let {
+            messageTemplateBuilder.setDebugMessage(it)
+        }
+
+        // Add action buttons (max 2 supported by Android Auto)
+        for (action in template.actions.take(2)) {
+            val actionBuilder = Action.Builder()
+                .setTitle(action.title)
+
+            if (action.isOnPressedListenerActive) {
+                actionBuilder.setOnClickListener {
+                    sendEvent(
+                        type = FAAChannelTypes.onActionPressed.name,
+                        data = mapOf("elementId" to action.elementId)
+                    )
+                }
+            }
+
+            messageTemplateBuilder.addAction(actionBuilder.build())
+        }
+
+        // Handle header action
+        val headerAction = template.headerAction
+        if (headerAction != null) {
+            when (headerAction.type) {
+                FAAHeaderActionType.back -> {
+                    messageTemplateBuilder.setHeaderAction(Action.BACK)
+                }
+                FAAHeaderActionType.custom -> {
+                    // Custom header actions need ActionStrip for MessageTemplate
+                    val customActionBuilder = Action.Builder()
+                    headerAction.title?.let { customActionBuilder.setTitle(it) }
+                    customActionBuilder.setOnClickListener {
+                        sendEvent(
+                            type = FAAChannelTypes.onHeaderActionPressed.name,
+                            data = mapOf("elementId" to headerAction.elementId)
+                        )
+                    }
+                    val actionStrip = ActionStrip.Builder()
+                        .addAction(customActionBuilder.build())
+                        .build()
+                    messageTemplateBuilder.setActionStrip(actionStrip)
+                }
+            }
+        } else if (addBackButton) {
+            messageTemplateBuilder.setHeaderAction(Action.BACK)
+        }
+
+        return messageTemplateBuilder.build()
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {

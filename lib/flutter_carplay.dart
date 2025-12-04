@@ -1,3 +1,4 @@
+export 'package:flutter_carplay/aa_models/action.dart' show AAAction;
 export 'package:flutter_carplay/aa_models/grid/grid_item.dart' show AAGridItem;
 export 'package:flutter_carplay/aa_models/grid/grid_template.dart'
     show AAGridTemplate;
@@ -8,6 +9,8 @@ export 'package:flutter_carplay/aa_models/list/list_section.dart'
     show AAListSection;
 export 'package:flutter_carplay/aa_models/list/list_template.dart'
     show AAListTemplate;
+export 'package:flutter_carplay/aa_models/message/message_template.dart'
+    show AAMessageTemplate;
 export 'package:flutter_carplay/android_auto_worker.dart'
     show FlutterAndroidAuto;
 export 'package:flutter_carplay/carplay_worker.dart' show FlutterCarplay;

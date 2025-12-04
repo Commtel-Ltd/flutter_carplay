@@ -79,6 +79,11 @@ class FlutterAndroidAuto {
             event['data']['elementId'],
           );
           break;
+        case FAAChannelTypes.onActionPressed:
+          _androidAutoController.processFAAActionPressedChannel(
+            event['data']['elementId'],
+          );
+          break;
         default:
           break;
       }
