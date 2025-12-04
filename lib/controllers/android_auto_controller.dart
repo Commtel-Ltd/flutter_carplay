@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_carplay/constants/private_constants.dart';
 
 import '../aa_models/grid/grid_item.dart';
+import '../aa_models/header_action.dart';
 import '../aa_models/list/list_item.dart';
 import '../aa_models/template.dart';
 import '../helpers/auto_android_helper.dart';
@@ -117,6 +118,17 @@ class FlutterAndroidAutoController {
         ),
         gridItem,
       );
+    }
+  }
+
+  /// Processes header action press events from Android Auto.
+  void processFAAHeaderActionPressedChannel(String elementId) {
+    final AAHeaderAction? headerAction = _androidAutoHelper.findAAHeaderAction(
+      templates: templateHistory,
+      elementId: elementId,
+    );
+    if (headerAction != null && headerAction.onPressed != null) {
+      headerAction.onPressed!();
     }
   }
 

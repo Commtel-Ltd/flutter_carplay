@@ -1,5 +1,7 @@
 package com.oguzhnatly.flutter_android_auto.models.grid
 
+import com.oguzhnatly.flutter_android_auto.models.FAAHeaderAction
+
 /**
  * Represents a grid template for Android Auto.
  * Maps to the Dart AAGridTemplate model.
@@ -13,7 +15,7 @@ data class FAAGridTemplate(
     val elementId: String,
     val title: String,
     val items: List<FAAGridItem>,
-    val showBackButton: Boolean = false,
+    val headerAction: FAAHeaderAction?,
 ) {
     companion object {
         fun fromJson(map: Map<String, Any?>): FAAGridTemplate {
@@ -26,13 +28,15 @@ data class FAAGridTemplate(
                         FAAGridItem.fromJson(itemMap as Map<String, Any?>)
                     }
             } ?: emptyList()
-            val showBackButton = map["showBackButton"] as? Boolean ?: false
+            @Suppress("UNCHECKED_CAST")
+            val headerActionMap = map["headerAction"] as? Map<String, Any?>
+            val headerAction = FAAHeaderAction.fromJson(headerActionMap)
 
             return FAAGridTemplate(
                 elementId = elementId,
                 title = title,
                 items = items,
-                showBackButton = showBackButton
+                headerAction = headerAction
             )
         }
     }

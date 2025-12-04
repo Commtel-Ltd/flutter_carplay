@@ -13,6 +13,8 @@ import androidx.car.app.model.Row
 import androidx.car.app.model.Template
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
+import com.oguzhnatly.flutter_android_auto.models.FAAHeaderAction
+import com.oguzhnatly.flutter_android_auto.models.FAAHeaderActionType
 import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridItem
 import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridTemplate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -369,8 +371,26 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             gridTemplateBuilder.setSingleList(itemListBuilder.build())
         }
 
-        // Use template's showBackButton property, or fall back to addBackButton parameter
-        if (template.showBackButton || addBackButton) {
+        // Handle header action - use template's headerAction or fall back to addBackButton parameter
+        val headerAction = template.headerAction
+        if (headerAction != null) {
+            when (headerAction.type) {
+                FAAHeaderActionType.back -> {
+                    gridTemplateBuilder.setHeaderAction(Action.BACK)
+                }
+                FAAHeaderActionType.custom -> {
+                    val customActionBuilder = Action.Builder()
+                    headerAction.title?.let { customActionBuilder.setTitle(it) }
+                    customActionBuilder.setOnClickListener {
+                        sendEvent(
+                            type = FAAChannelTypes.onHeaderActionPressed.name,
+                            data = mapOf("elementId" to headerAction.elementId)
+                        )
+                    }
+                    gridTemplateBuilder.setHeaderAction(customActionBuilder.build())
+                }
+            }
+        } else if (addBackButton) {
             gridTemplateBuilder.setHeaderAction(Action.BACK)
         }
 

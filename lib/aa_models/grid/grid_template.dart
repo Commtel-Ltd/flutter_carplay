@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../header_action.dart';
 import '../template.dart';
 import 'grid_item.dart';
 
@@ -27,18 +28,19 @@ class AAGridTemplate implements AATemplate {
   /// but the actual limit varies by vehicle.
   final List<AAGridItem> items;
 
-  /// Whether to show the back button in the header.
-  final bool showBackButton;
+  /// The header action button displayed in the navigation bar.
+  /// Can be a back button or a custom action with title/icon.
+  final AAHeaderAction? headerAction;
 
   /// Creates [AAGridTemplate] to display a grid of items.
   ///
   /// [title] - The title shown in the header
   /// [items] - List of [AAGridItem] objects to display in the grid
-  /// [showBackButton] - Whether to show the back button (default: false)
+  /// [headerAction] - Optional header action button (back or custom)
   AAGridTemplate({
     required this.title,
     required this.items,
-    this.showBackButton = false,
+    this.headerAction,
   }) : _elementId = const Uuid().v4();
 
   @override
@@ -49,6 +51,6 @@ class AAGridTemplate implements AATemplate {
         '_elementId': _elementId,
         'title': title,
         'items': items.map((AAGridItem item) => item.toJson()).toList(),
-        'showBackButton': showBackButton,
+        'headerAction': headerAction?.toJson(),
       };
 }

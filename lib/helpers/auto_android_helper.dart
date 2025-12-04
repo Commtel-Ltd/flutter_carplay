@@ -1,5 +1,6 @@
 import 'package:flutter_carplay/aa_models/grid/grid_item.dart';
 import 'package:flutter_carplay/aa_models/grid/grid_template.dart';
+import 'package:flutter_carplay/aa_models/header_action.dart';
 import 'package:flutter_carplay/aa_models/template.dart';
 import 'package:flutter_carplay/flutter_carplay.dart';
 
@@ -60,6 +61,19 @@ class FlutterAutoAndroidHelper {
             return item;
           }
         }
+      }
+    }
+    return null;
+  }
+
+  /// Finds an [AAHeaderAction] by its element ID within the template history.
+  AAHeaderAction? findAAHeaderAction({
+    required List<AATemplate> templates,
+    required String elementId,
+  }) {
+    for (var t in templates) {
+      if (t is AAGridTemplate && t.headerAction?.uniqueId == elementId) {
+        return t.headerAction;
       }
     }
     return null;

@@ -18,4 +18,5 @@ enum class FAAChannelTypes {
     onGridItemSelected,
     onGridItemSelectedComplete,
     onScreenBackButtonPressed,
+    onHeaderActionPressed,
 }
