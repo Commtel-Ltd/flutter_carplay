@@ -549,7 +549,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                     messageTemplateBuilder.setActionStrip(actionStrip)
                 }
             }
-        } else if (addBackButton) {
+        } else if (addBackButton && template.showBackButton) {
             messageTemplateBuilder.setHeaderAction(Action.BACK)
         }
 

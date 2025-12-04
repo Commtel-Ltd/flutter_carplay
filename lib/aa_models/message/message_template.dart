@@ -44,6 +44,12 @@ class AAMessageTemplate implements AATemplate {
   /// Defaults to false.
   final bool isLoading;
 
+  /// A Boolean value that controls whether a back button is shown.
+  /// When false, no back button will be displayed even when pushed.
+  /// This is ignored if [headerAction] is set.
+  /// Defaults to true.
+  final bool showBackButton;
+
   /// A debug message shown only in debug builds.
   /// Useful for development and testing.
   final String? debugMessage;
@@ -56,6 +62,7 @@ class AAMessageTemplate implements AATemplate {
   /// [headerAction] - Optional header action button (back or custom)
   /// [actions] - List of action buttons (max 2)
   /// [isLoading] - Whether to show loading state
+  /// [showBackButton] - Whether to show back button (default true)
   /// [debugMessage] - Optional debug message for development
   AAMessageTemplate({
     required this.message,
@@ -64,6 +71,7 @@ class AAMessageTemplate implements AATemplate {
     this.headerAction,
     this.actions = const [],
     this.isLoading = false,
+    this.showBackButton = true,
     this.debugMessage,
   }) : _elementId = const Uuid().v4();
 
@@ -79,6 +87,7 @@ class AAMessageTemplate implements AATemplate {
         'headerAction': headerAction?.toJson(),
         'actions': actions.map((AAAction action) => action.toJson()).toList(),
         'isLoading': isLoading,
+        'showBackButton': showBackButton,
         'debugMessage': debugMessage,
       };
 }

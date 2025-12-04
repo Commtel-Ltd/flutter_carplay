@@ -20,6 +20,7 @@ data class FAAMessageTemplate(
     val headerAction: FAAHeaderAction? = null,
     val actions: List<FAAAction> = emptyList(),
     val isLoading: Boolean = false,
+    val showBackButton: Boolean = true,
     val debugMessage: String? = null,
 ) {
     companion object {
@@ -29,6 +30,7 @@ data class FAAMessageTemplate(
             val title = map["title"] as? String
             val icon = map["icon"] as? String
             val isLoading = map["isLoading"] as? Boolean ?: false
+            val showBackButton = map["showBackButton"] as? Boolean ?: true
             val debugMessage = map["debugMessage"] as? String
 
             @Suppress("UNCHECKED_CAST")
@@ -51,6 +53,7 @@ data class FAAMessageTemplate(
                 headerAction = headerAction,
                 actions = actions,
                 isLoading = isLoading,
+                showBackButton = showBackButton,
                 debugMessage = debugMessage
             )
         }
