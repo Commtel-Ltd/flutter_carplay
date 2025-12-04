@@ -231,7 +231,10 @@ class FlutterCarplay {
   /// Programmatically selects a tab at the given [index] on the [CPTabBarTemplate]
   /// with the specified [elementId].
   ///
-  /// This uses the native iOS `selectedIndex` property on CPTabBarTemplate.
+  /// This uses the native iOS `selectTemplate(at:)` method on CPTabBarTemplate.
+  ///
+  /// **Note:** This method requires iOS 17.0 or later. On earlier iOS versions,
+  /// this method will return `false` and log a warning.
   ///
   /// - [elementId] is the unique identifier of the CPTabBarTemplate.
   /// - [index] is the zero-based index of the tab to select.

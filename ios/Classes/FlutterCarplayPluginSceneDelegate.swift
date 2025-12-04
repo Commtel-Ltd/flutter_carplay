@@ -68,8 +68,13 @@ class FlutterCarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelega
     template.updateTemplates(templateFromHistory.getRawTemplates())
   }
 
-  // https://developer.apple.com/documentation/carplay/cptabbartemplate/selectedindex
+  // https://developer.apple.com/documentation/carplay/cptabbartemplate/selecttemplate(at:)
   static public func selectTabBarIndex(elementId: String, index: Int) -> Bool {
+    guard #available(iOS 17.0, *) else {
+        NSLog("FlutterCarPlaySceneDelegate - selectTabBarIndex: Requires iOS 17.0 or later.")
+        return false
+    }
+
     guard let interfaceController = self.interfaceController else {
         NSLog("FlutterCarPlaySceneDelegate - selectTabBarIndex: Interface controller not available.")
         return false
@@ -85,7 +90,7 @@ class FlutterCarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelega
         return false
     }
 
-    template.selectedIndex = index
+    template.selectTemplate(at: index)
     return true
   }
 
