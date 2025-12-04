@@ -207,15 +207,18 @@ class FlutterCarplay {
   }
 
   /// It will update the templates of the [CPTabBarTemplate] which has the given [elementId].
+  ///
+  /// The [templates] list can contain any combination of [CPListTemplate],
+  /// [CPGridTemplate], [CPInformationTemplate], and [CPPointOfInterestTemplate].
   Future<void> updateTabBarTemplates({
     required String elementId,
-    required List<CPListTemplate> templates,
+    required List<CPTabBarChildTemplate> templates,
   }) async {
     final bool? isCompleted = await _carPlayController.methodChannel
         .invokeMethod('updateTabBarTemplates', <String, dynamic>{
       'elementId': elementId,
       'templates': templates
-          .map((CPListTemplate template) => template.toJson())
+          .map((CPTabBarChildTemplate template) => template.toJson())
           .toList(),
     });
 

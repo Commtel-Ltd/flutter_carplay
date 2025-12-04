@@ -54,16 +54,18 @@ class FlutterCarPlayController {
           switch (h) {
             case CPTabBarTemplate _:
               for (var t in h.templates) {
-                for (var s in t.sections) {
-                  for (var i in s.items) {
-                    if (i.uniqueId == updatedListItem.uniqueId) {
-                      (currentRootTemplate as CPTabBarTemplate)
-                          .templates[(currentRootTemplate as CPTabBarTemplate)
-                              .templates
-                              .indexOf(t)]
-                          .sections[t.sections.indexOf(s)]
-                          .items[s.items.indexOf(i)] = updatedListItem;
-                      break l1;
+                // Only CPListTemplate has sections
+                if (t is CPListTemplate) {
+                  for (var s in t.sections) {
+                    for (var i in s.items) {
+                      if (i.uniqueId == updatedListItem.uniqueId) {
+                        final tabBar = currentRootTemplate as CPTabBarTemplate;
+                        final templateIndex = tabBar.templates.indexOf(t);
+                        (tabBar.templates[templateIndex] as CPListTemplate)
+                            .sections[t.sections.indexOf(s)]
+                            .items[s.items.indexOf(i)] = updatedListItem;
+                        break l1;
+                      }
                     }
                   }
                 }
@@ -101,13 +103,12 @@ class FlutterCarPlayController {
             case CPTabBarTemplate _:
               for (var t in h.templates) {
                 if (t is CPGridTemplate) {
-                  final gridTemplate = t as CPGridTemplate;
-                  for (var b in gridTemplate.buttons) {
+                  for (var b in t.buttons) {
                     if (b.uniqueId == updatedGridButton.uniqueId) {
                       final tabBar = currentRootTemplate as CPTabBarTemplate;
                       final templateIndex = tabBar.templates.indexOf(t);
                       (tabBar.templates[templateIndex] as CPGridTemplate)
-                          .buttons[gridTemplate.buttons.indexOf(b)] = updatedGridButton;
+                          .buttons[t.buttons.indexOf(b)] = updatedGridButton;
                       break l1;
                     }
                   }
@@ -175,7 +176,19 @@ class FlutterCarPlayController {
     CPGridButton? gridButton;
     l1:
     for (var t in templateHistory) {
-      if (t is CPGridTemplate) {
+      if (t is CPTabBarTemplate) {
+        // Search in tab bar child templates
+        for (var tab in t.templates) {
+          if (tab is CPGridTemplate) {
+            for (var b in tab.buttons) {
+              if (b.uniqueId == elementId) {
+                gridButton = b;
+                break l1;
+              }
+            }
+          }
+        }
+      } else if (t is CPGridTemplate) {
         for (var b in t.buttons) {
           if (b.uniqueId == elementId) {
             gridButton = b;
@@ -210,7 +223,32 @@ class FlutterCarPlayController {
   void processFCPTextButtonPressed(String elementId) {
     l1:
     for (var t in templateHistory) {
-      if (t is CPPointOfInterestTemplate) {
+      if (t is CPTabBarTemplate) {
+        // Search in tab bar child templates
+        for (var tab in t.templates) {
+          if (tab is CPPointOfInterestTemplate) {
+            for (CPPointOfInterest p in tab.poi) {
+              if (p.primaryButton != null &&
+                  p.primaryButton!.uniqueId == elementId) {
+                p.primaryButton!.onPress();
+                break l1;
+              }
+              if (p.secondaryButton != null &&
+                  p.secondaryButton!.uniqueId == elementId) {
+                p.secondaryButton!.onPress();
+                break l1;
+              }
+            }
+          } else if (tab is CPInformationTemplate) {
+            for (CPTextButton b in tab.actions) {
+              if (b.uniqueId == elementId) {
+                b.onPress();
+                break l1;
+              }
+            }
+          }
+        }
+      } else if (t is CPPointOfInterestTemplate) {
         for (CPPointOfInterest p in t.poi) {
           if (p.primaryButton != null &&
               p.primaryButton!.uniqueId == elementId) {
@@ -223,14 +261,11 @@ class FlutterCarPlayController {
             break l1;
           }
         }
-      } else {
-        if (t is CPInformationTemplate) {
-          l2:
-          for (CPTextButton b in t.actions) {
-            if (b.uniqueId == elementId) {
-              b.onPress();
-              break l2;
-            }
+      } else if (t is CPInformationTemplate) {
+        for (CPTextButton b in t.actions) {
+          if (b.uniqueId == elementId) {
+            b.onPress();
+            break l1;
           }
         }
       }

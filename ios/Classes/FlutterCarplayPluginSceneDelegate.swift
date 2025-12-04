@@ -51,7 +51,7 @@ class FlutterCarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelega
   }
 
   // https://developer.apple.com/documentation/carplay/cptabbartemplate/updatetemplates(_:)
-  static public func updateTabBarTemplates(elementId: String, templates: [FCPListTemplate]) {
+  static public func updateTabBarTemplates(elementId: String, templates: [FCPTabBarChildTemplate]) {
     guard let interfaceController = self.interfaceController else { return }
 
     guard let template = interfaceController.templates.first(where: { $0.elementId == elementId }) as? CPTabBarTemplate else {

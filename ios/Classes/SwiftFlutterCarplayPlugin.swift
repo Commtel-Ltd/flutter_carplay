@@ -111,7 +111,7 @@ public class SwiftFlutterCarplayPlugin: NSObject, FlutterPlugin {
       }
       let elementId = args["elementId"] as! String
       let templates = (args["templates"] as! Array<[String: Any]>).map {
-        FCPListTemplate(obj: $0, templateType: FCPListTemplateTypes.PART_OF_GRID_TEMPLATE)
+        SwiftFlutterCarplayPlugin.createTabBarChildTemplate(from: $0)
       }
       FlutterCarPlaySceneDelegate.updateTabBarTemplates(elementId: elementId, templates: templates)
       result(true)
@@ -306,12 +306,16 @@ public class SwiftFlutterCarplayPlugin: NSObject, FlutterPlugin {
     var collected: [FCPListTemplate] = []
 
     for template in SwiftFlutterCarplayPlugin.templateStack {
-       if let tabBar = template as? FCPTabBarTemplate,
-             let tabs = tabBar.getTemplates() as? [FCPListTemplate] {
-              collected.append(contentsOf: tabs)
-          } else if let list = template as? FCPListTemplate {
+       if let tabBar = template as? FCPTabBarTemplate {
+          // Collect all list templates from tab bar (could be any tab type)
+          for tab in tabBar.getTemplates() {
+            if let list = tab as? FCPListTemplate {
               collected.append(list)
+            }
           }
+       } else if let list = template as? FCPListTemplate {
+          collected.append(list)
+       }
     }
 
     for t in collected {
@@ -370,5 +374,30 @@ public class SwiftFlutterCarplayPlugin: NSObject, FlutterPlugin {
       }
     }
     NSLog("FCP: Grid button not found with elementId: \(elementId)")
+  }
+
+  /// Creates the appropriate child template based on the template data.
+  /// Detects the template type by checking for type-specific properties.
+  static func createTabBarChildTemplate(from obj: [String: Any]) -> FCPTabBarChildTemplate {
+    // Check for CPListTemplate - has 'sections' property
+    if obj["sections"] != nil {
+      return FCPListTemplate(obj: obj, templateType: FCPListTemplateTypes.PART_OF_GRID_TEMPLATE)
+    }
+    // Check for CPGridTemplate - has 'buttons' property
+    else if obj["buttons"] != nil {
+      return FCPGridTemplate(obj: obj)
+    }
+    // Check for CPInformationTemplate - has 'informationItems' and 'layout' properties
+    else if obj["informationItems"] != nil && obj["layout"] != nil {
+      return FCPInformationTemplate(obj: obj)
+    }
+    // Check for CPPointOfInterestTemplate - has 'poi' property
+    else if obj["poi"] != nil {
+      return FCPPointOfInterestTemplate(obj: obj)
+    }
+    // Default to list template for backward compatibility
+    else {
+      return FCPListTemplate(obj: obj, templateType: FCPListTemplateTypes.PART_OF_GRID_TEMPLATE)
+    }
   }
 }

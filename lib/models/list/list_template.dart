@@ -1,11 +1,12 @@
 import 'package:flutter_carplay/models/button/bar_button.dart';
 import 'package:flutter_carplay/models/list/list_section.dart';
+import 'package:flutter_carplay/models/tabbar/tabbar_child_template.dart';
 import 'package:uuid/uuid.dart';
 
 import '../template.dart';
 
 /// A template object that displays and manages a list of items.
-class CPListTemplate implements CPTemplate {
+class CPListTemplate implements CPTemplate, CPTabBarChildTemplate {
   /// Unique id of the object.
   final String _elementId = const Uuid().v4();
 
@@ -36,6 +37,7 @@ class CPListTemplate implements CPTemplate {
   ///
   /// CarPlay only displays the red indicator when the template is a root-template
   /// of a tab bar, otherwise setting this property has no effect.
+  @override
   final bool showsTabBadge;
 
   /// A system icon which will be used in a image that represents the content of the tab.
@@ -55,6 +57,7 @@ class CPListTemplate implements CPTemplate {
   /// trademark-related use. Apple reserves the right to review and, in its sole discretion, require modification
   /// or discontinuance of use of any Symbol used in violation of the foregoing restrictions, and you agree to
   /// promptly comply with any such request.
+  @override
   final String systemIcon;
 
   /// Back button object

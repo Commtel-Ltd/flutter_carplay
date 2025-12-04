@@ -80,4 +80,4 @@ class FCPListTemplate {
 }
 
 @available(iOS 14.0, *)
-extension FCPListTemplate: FCPRootTemplate { }
+extension FCPListTemplate: FCPRootTemplate, FCPTabBarChildTemplate { }

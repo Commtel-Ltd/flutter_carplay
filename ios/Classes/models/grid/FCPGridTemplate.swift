@@ -16,10 +16,14 @@ class FCPGridTemplate {
   private var objcButtons: [FCPGridButton]
   private var objcBackButton: FCPBarButton?
   private var backButton: CPBarButton?
+  private var systemIcon: String
+  private var showsTabBadge: Bool
 
   init(obj: [String : Any]) {
     self.elementId = obj["_elementId"] as! String
     self.title = obj["title"] as! String
+    self.systemIcon = obj["systemIcon"] as? String ?? "square.grid.2x2"
+    self.showsTabBadge = obj["showsTabBadge"] as? Bool ?? false
     self.objcButtons = (obj["buttons"] as! Array<[String : Any]>).map {
       FCPGridButton(obj: $0)
     }
@@ -36,6 +40,8 @@ class FCPGridTemplate {
   var get: CPTemplate {
     let gridTemplate = CPGridTemplate.init(title: self.title, gridButtons: self.buttons)
     gridTemplate.backButton = self.backButton
+    gridTemplate.tabImage = UIImage(systemName: systemIcon)
+    gridTemplate.showsTabBadge = showsTabBadge
     gridTemplate.elementId = self.elementId
     self._super = gridTemplate
     return gridTemplate
@@ -47,4 +53,4 @@ class FCPGridTemplate {
 }
 
 @available(iOS 14.0, *)
-extension FCPGridTemplate: FCPRootTemplate { }
+extension FCPGridTemplate: FCPRootTemplate, FCPTabBarChildTemplate { }
