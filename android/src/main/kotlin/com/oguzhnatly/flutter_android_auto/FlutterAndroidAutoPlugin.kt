@@ -424,24 +424,29 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             gridItemBuilder.setText(CarText.create(it))
         }
 
-        // Determine image path - use fallback immediately if no valid image provided
-        val imagePath = if (!item.image.isNullOrEmpty()) item.image else "assets/question_mark.png"
-
-        // Load the image (either provided or fallback)
-        val carIcon = loadCarImageAsync(imagePath)
-
-        // GridItem requires an image - set it
-        if (carIcon != null) {
-            gridItemBuilder.setImage(carIcon, GridItem.IMAGE_TYPE_LARGE)
+        // Set loading state or image (cannot have both)
+        if (item.isLoading) {
+            gridItemBuilder.setLoading(true)
         } else {
-            // Fallback failed too - use the fallback asset as last resort
-            loadCarImageAsync("assets/question_mark.png")?.let {
-                gridItemBuilder.setImage(it, GridItem.IMAGE_TYPE_LARGE)
+            // Determine image path - use fallback immediately if no valid image provided
+            val imagePath = if (!item.image.isNullOrEmpty()) item.image else "assets/question_mark.png"
+
+            // Load the image (either provided or fallback)
+            val carIcon = loadCarImageAsync(imagePath)
+
+            // GridItem requires an image - set it
+            if (carIcon != null) {
+                gridItemBuilder.setImage(carIcon, GridItem.IMAGE_TYPE_LARGE)
+            } else {
+                // Fallback failed too - use the fallback asset as last resort
+                loadCarImageAsync("assets/question_mark.png")?.let {
+                    gridItemBuilder.setImage(it, GridItem.IMAGE_TYPE_LARGE)
+                }
             }
         }
 
-        // Set click listener if enabled
-        if (item.isOnPressListenerActive && item.isEnabled) {
+        // Set click listener if enabled (cannot set click listener when loading)
+        if (item.isOnPressListenerActive && item.isEnabled && !item.isLoading) {
             gridItemBuilder.setOnClickListener {
                 sendEvent(
                     type = FAAChannelTypes.onGridItemSelected.name,

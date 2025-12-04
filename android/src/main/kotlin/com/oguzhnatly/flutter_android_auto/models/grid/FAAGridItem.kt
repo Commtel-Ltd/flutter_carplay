@@ -10,6 +10,7 @@ data class FAAGridItem(
     val text: String? = null,
     val image: String? = null,
     val isEnabled: Boolean = true,
+    val isLoading: Boolean = false,
     val isOnPressListenerActive: Boolean,
 ) {
     companion object {
@@ -19,6 +20,7 @@ data class FAAGridItem(
             val text = map["text"] as? String
             val image = map["image"] as? String
             val isEnabled = map["isEnabled"] as? Boolean ?: true
+            val isLoading = map["isLoading"] as? Boolean ?: false
             val isOnPressListenerActive = map["onPress"] as? Boolean ?: false
 
             return FAAGridItem(
@@ -27,6 +29,7 @@ data class FAAGridItem(
                 text = text,
                 image = image,
                 isEnabled = isEnabled,
+                isLoading = isLoading,
                 isOnPressListenerActive = isOnPressListenerActive
             )
         }

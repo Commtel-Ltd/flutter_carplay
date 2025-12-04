@@ -29,6 +29,12 @@ class AAGridItem {
   /// Defaults to true.
   final bool isEnabled;
 
+  /// A Boolean value that shows a loading spinner instead of the image.
+  /// When true, the grid item displays a loading indicator.
+  /// Note: Cannot set loading state and image at the same time in Android Auto.
+  /// Defaults to false.
+  final bool isLoading;
+
   /// Fired after the user taps the grid item.
   /// The callback receives a completion function that should be called
   /// when the action is complete, and a reference to self.
@@ -39,6 +45,7 @@ class AAGridItem {
     this.text,
     this.image,
     this.isEnabled = true,
+    this.isLoading = false,
     this.onPress,
   }) : _elementId = const Uuid().v4();
 
@@ -50,6 +57,7 @@ class AAGridItem {
         'text': text,
         'image': image,
         'isEnabled': isEnabled,
+        'isLoading': isLoading,
         'onPress': onPress != null,
       };
 }
