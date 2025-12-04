@@ -5,6 +5,7 @@ import androidx.car.app.model.Action
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.CarText
 import androidx.car.app.model.GridItem
+import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.GridTemplate
 import androidx.car.app.model.ItemList
 import androidx.car.app.model.ListTemplate
@@ -379,6 +380,8 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                     gridTemplateBuilder.setHeaderAction(Action.BACK)
                 }
                 FAAHeaderActionType.custom -> {
+                    // Custom actions with titles must use ActionStrip, not setHeaderAction
+                    // setHeaderAction only allows system actions (BACK, APP_ICON) without custom titles
                     val customActionBuilder = Action.Builder()
                     headerAction.title?.let { customActionBuilder.setTitle(it) }
                     customActionBuilder.setOnClickListener {
@@ -387,7 +390,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                             data = mapOf("elementId" to headerAction.elementId)
                         )
                     }
-                    gridTemplateBuilder.setHeaderAction(customActionBuilder.build())
+                    val actionStrip = ActionStrip.Builder()
+                        .addAction(customActionBuilder.build())
+                        .build()
+                    gridTemplateBuilder.setActionStrip(actionStrip)
                 }
             }
         } else if (addBackButton) {
