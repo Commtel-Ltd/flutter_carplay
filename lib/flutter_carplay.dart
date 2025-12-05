@@ -11,6 +11,9 @@ export 'package:flutter_carplay/aa_models/list/list_template.dart'
     show AAListTemplate;
 export 'package:flutter_carplay/aa_models/message/message_template.dart'
     show AAMessageTemplate;
+export 'package:flutter_carplay/aa_models/tab/tab.dart' show AATab;
+export 'package:flutter_carplay/aa_models/tab/tab_template.dart'
+    show AATabTemplate;
 export 'package:flutter_carplay/android_auto_worker.dart'
     show FlutterAndroidAuto;
 export 'package:flutter_carplay/carplay_worker.dart' show FlutterCarplay;

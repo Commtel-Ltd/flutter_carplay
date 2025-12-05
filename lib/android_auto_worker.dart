@@ -84,6 +84,12 @@ class FlutterAndroidAuto {
             event['data']['elementId'],
           );
           break;
+        case FAAChannelTypes.onTabSelected:
+          _androidAutoController.processFAATabSelectedChannel(
+            event['data']['elementId'],
+            event['data']['tabContentId'],
+          );
+          break;
         default:
           break;
       }

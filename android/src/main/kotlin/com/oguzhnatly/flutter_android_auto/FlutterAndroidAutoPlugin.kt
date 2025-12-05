@@ -12,15 +12,21 @@ import androidx.car.app.model.ListTemplate
 import androidx.car.app.model.MessageTemplate
 import androidx.car.app.model.SectionedItemList
 import androidx.car.app.model.Row
+import androidx.car.app.model.Tab
+import androidx.car.app.model.TabContents
+import androidx.car.app.model.TabTemplate
 import androidx.car.app.model.Template
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
+import androidx.core.graphics.drawable.IconCompat
 import com.oguzhnatly.flutter_android_auto.models.FAAAction
 import com.oguzhnatly.flutter_android_auto.models.FAAHeaderAction
 import com.oguzhnatly.flutter_android_auto.models.FAAHeaderActionType
 import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridItem
 import com.oguzhnatly.flutter_android_auto.models.grid.FAAGridTemplate
 import com.oguzhnatly.flutter_android_auto.models.message.FAAMessageTemplate
+import com.oguzhnatly.flutter_android_auto.models.tab.FAATab
+import com.oguzhnatly.flutter_android_auto.models.tab.FAATabTemplate
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -44,6 +50,9 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         var events: EventChannel.EventSink? = null
         var currentTemplate: Template? = null
         var currentScreen: Screen? = null
+        // Track tab template state for tab switching
+        var currentTabTemplateData: FAATabTemplate? = null
+        var currentActiveTabContentId: String = ""
 
         fun sendEvent(type: String, data: Map<String, Any>) {
             events?.success(
@@ -260,6 +269,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
 
                 "FAAMessageTemplate" -> getMessageTemplate(
                     call, result, data, false
+                )
+
+                "FAATabTemplate" -> getTabTemplate(
+                    call, result, data
                 )
 
                 else -> null
@@ -553,6 +566,215 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             messageTemplateBuilder.setHeaderAction(Action.BACK)
         }
 
+        return messageTemplateBuilder.build()
+    }
+
+    /**
+     * Creates an Android Auto TabTemplate from the Dart AATabTemplate data.
+     *
+     * According to Android Auto docs:
+     * - TabTemplate requires 2-4 tabs
+     * - Each tab can contain: ListTemplate, GridTemplate, MessageTemplate, etc.
+     * - Requires CarApi level 6 or higher
+     * - Header action must be APP_ICON type (not BACK)
+     * - TabCallback is invoked when user selects a tab
+     */
+    private suspend fun getTabTemplate(
+        call: MethodCall,
+        result: MethodChannel.Result,
+        data: Map<String, Any?>
+    ): Template {
+        val template = FAATabTemplate.fromJson(data)
+
+        // Store template data for tab switching
+        currentTabTemplateData = template
+        currentActiveTabContentId = template.activeTabContentId
+
+        val tabCallback = object : TabTemplate.TabCallback {
+            override fun onTabSelected(tabContentId: String) {
+                currentActiveTabContentId = tabContentId
+                // Notify Flutter of tab selection
+                if (template.onTabSelected) {
+                    sendEvent(
+                        type = FAAChannelTypes.onTabSelected.name,
+                        data = mapOf(
+                            "elementId" to template.elementId,
+                            "tabContentId" to tabContentId
+                        )
+                    )
+                }
+                // Invalidate screen to refresh with new tab content
+                currentScreen?.invalidate()
+            }
+        }
+
+        val tabTemplateBuilder = TabTemplate.Builder(tabCallback)
+            .setHeaderAction(Action.APP_ICON)
+
+        if (template.isLoading) {
+            tabTemplateBuilder.setLoading(true)
+        } else {
+            // Add tabs
+            for (tab in template.tabs) {
+                val carIcon = loadCarImageAsync(tab.icon)
+                val tabBuilder = Tab.Builder()
+                    .setTitle(tab.title)
+                    .setContentId(tab.elementId)
+
+                carIcon?.let { tabBuilder.setIcon(it) }
+
+                tabTemplateBuilder.addTab(tabBuilder.build())
+            }
+
+            // Set active tab content
+            val activeContentData = template.tabContents[currentActiveTabContentId]
+            if (activeContentData != null) {
+                val contentTemplate = getTemplateFromData(activeContentData)
+                if (contentTemplate != null) {
+                    tabTemplateBuilder.setTabContents(
+                        TabContents.Builder(contentTemplate).build()
+                    )
+                }
+            }
+
+            tabTemplateBuilder.setActiveTabContentId(currentActiveTabContentId)
+        }
+
+        return tabTemplateBuilder.build()
+    }
+
+    /**
+     * Helper method to create a template from JSON data based on template type.
+     * Used for creating tab content templates.
+     */
+    private suspend fun getTemplateFromData(data: Map<String, Any?>): Template? {
+        // Determine template type by checking for identifying fields
+        return when {
+            // ListTemplate has 'sections' field
+            data.containsKey("sections") -> {
+                val listTemplate = FAAListTemplate.fromJson(data)
+                buildListTemplateContent(listTemplate)
+            }
+            // GridTemplate has 'items' field (array of grid items)
+            data.containsKey("items") -> {
+                val gridTemplate = FAAGridTemplate.fromJson(data)
+                buildGridTemplateContent(gridTemplate)
+            }
+            // MessageTemplate has 'message' field
+            data.containsKey("message") -> {
+                val messageTemplate = FAAMessageTemplate.fromJson(data)
+                buildMessageTemplateContent(messageTemplate)
+            }
+            else -> null
+        }
+    }
+
+    /**
+     * Builds a ListTemplate for use as tab content (no header action).
+     */
+    private suspend fun buildListTemplateContent(template: FAAListTemplate): Template {
+        val listTemplateBuilder = ListTemplate.Builder()
+
+        if (template.sections.isEmpty()) {
+            listTemplateBuilder.setLoading(true)
+        } else {
+            listTemplateBuilder.setLoading(false)
+            val isSingleList =
+                template.sections.size == 1 && template.sections.first().title.isEmpty()
+
+            if (isSingleList) {
+                val itemListBuilder = ItemList.Builder()
+                val sectionItems = template.sections.first().items
+                for (item in sectionItems) {
+                    itemListBuilder.addItem(createRowFromItem(item))
+                }
+                listTemplateBuilder.setSingleList(itemListBuilder.build())
+            } else {
+                for (section in template.sections) {
+                    val itemListBuilder = ItemList.Builder()
+                    for (item in section.items) {
+                        itemListBuilder.addItem(createRowFromItem(item))
+                    }
+                    val sectionedItemList = SectionedItemList.create(
+                        itemListBuilder.build(), section.title ?: ""
+                    )
+                    listTemplateBuilder.addSectionedList(sectionedItemList)
+                }
+            }
+        }
+
+        // Tab content templates should not have header actions
+        return listTemplateBuilder.build()
+    }
+
+    /**
+     * Builds a GridTemplate for use as tab content (no header action).
+     */
+    private suspend fun buildGridTemplateContent(template: FAAGridTemplate): Template {
+        val gridTemplateBuilder = GridTemplate.Builder()
+
+        if (template.title.isNotEmpty()) {
+            gridTemplateBuilder.setTitle(template.title)
+        }
+
+        if (template.items.isEmpty()) {
+            gridTemplateBuilder.setLoading(true)
+        } else {
+            gridTemplateBuilder.setLoading(false)
+            val itemListBuilder = ItemList.Builder()
+
+            for (item in template.items) {
+                itemListBuilder.addItem(createGridItem(item))
+            }
+
+            gridTemplateBuilder.setSingleList(itemListBuilder.build())
+        }
+
+        // Tab content templates should not have header actions
+        return gridTemplateBuilder.build()
+    }
+
+    /**
+     * Builds a MessageTemplate for use as tab content (no header action).
+     */
+    private suspend fun buildMessageTemplateContent(template: FAAMessageTemplate): Template {
+        val messageTemplateBuilder = MessageTemplate.Builder(template.message)
+
+        template.title?.let {
+            messageTemplateBuilder.setTitle(it)
+        }
+
+        if (template.isLoading) {
+            messageTemplateBuilder.setLoading(true)
+        } else {
+            template.icon?.let { iconPath ->
+                loadCarImageAsync(iconPath)?.let { carIcon ->
+                    messageTemplateBuilder.setIcon(carIcon)
+                }
+            }
+        }
+
+        template.debugMessage?.let {
+            messageTemplateBuilder.setDebugMessage(it)
+        }
+
+        for (action in template.actions.take(2)) {
+            val actionBuilder = Action.Builder()
+                .setTitle(action.title)
+
+            if (action.isOnPressedListenerActive) {
+                actionBuilder.setOnClickListener {
+                    sendEvent(
+                        type = FAAChannelTypes.onActionPressed.name,
+                        data = mapOf("elementId" to action.elementId)
+                    )
+                }
+            }
+
+            messageTemplateBuilder.addAction(actionBuilder.build())
+        }
+
+        // Tab content templates should not have header actions
         return messageTemplateBuilder.build()
     }
 

@@ -36,4 +36,6 @@ enum FAAChannelTypes {
   onScreenBackButtonPressed,
   onHeaderActionPressed,
   onActionPressed,
+  onTabSelected,
+  updateTabContents,
 }

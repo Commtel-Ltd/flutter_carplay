@@ -5,6 +5,7 @@ import '../aa_models/action.dart';
 import '../aa_models/grid/grid_item.dart';
 import '../aa_models/header_action.dart';
 import '../aa_models/list/list_item.dart';
+import '../aa_models/tab/tab_template.dart';
 import '../aa_models/template.dart';
 import '../helpers/auto_android_helper.dart';
 import '../helpers/enum_utils.dart';
@@ -141,6 +142,17 @@ class FlutterAndroidAutoController {
     );
     if (action != null && action.onPressed != null) {
       action.onPressed!();
+    }
+  }
+
+  /// Processes tab selection events from Android Auto TabTemplate.
+  void processFAATabSelectedChannel(String elementId, String tabContentId) {
+    // Find the tab template in history
+    for (final template in templateHistory) {
+      if (template is AATabTemplate && template.uniqueId == elementId) {
+        template.selectTab(tabContentId);
+        break;
+      }
     }
   }
 
