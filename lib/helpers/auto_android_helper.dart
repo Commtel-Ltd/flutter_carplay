@@ -11,12 +11,13 @@ class FlutterAutoAndroidHelper {
     for (var t in templates) {
       final List<AAListTemplate> listTemplates = [];
 
-      /*if (t.runtimeType.toString() == (AATabBarTemplate).toString()) {
-        for (var template in t.templates) {
-          listTemplates.add(template);
+      if (t is AATabTemplate) {
+        for (var content in t.tabContents.values) {
+          if (content is AAListTemplate) {
+            listTemplates.add(content);
+          }
         }
-      } else*/
-      if (t is AAListTemplate) {
+      } else if (t is AAListTemplate) {
         listTemplates.add(t);
       }
 
@@ -41,14 +42,13 @@ class FlutterAutoAndroidHelper {
     for (var t in templates) {
       final List<AAGridTemplate> gridTemplates = [];
 
-      /*if (t.runtimeType.toString() == (AATabBarTemplate).toString()) {
-        for (var template in t.templates) {
-          if (template is AAGridTemplate) {
-            gridTemplates.add(template);
+      if (t is AATabTemplate) {
+        for (var content in t.tabContents.values) {
+          if (content is AAGridTemplate) {
+            gridTemplates.add(content);
           }
         }
-      } else*/
-      if (t is AAGridTemplate) {
+      } else if (t is AAGridTemplate) {
         gridTemplates.add(t);
       }
 

@@ -590,6 +590,14 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         currentTabTemplateData = template
         currentActiveTabContentId = template.activeTabContentId
 
+        return buildTabTemplate(template, currentActiveTabContentId)
+    }
+
+    /**
+     * Builds a TabTemplate with the specified active tab.
+     * This is separated from getTabTemplate to allow rebuilding when tabs are switched.
+     */
+    private suspend fun buildTabTemplate(template: FAATabTemplate, activeTabContentId: String): Template {
         val tabCallback = object : TabTemplate.TabCallback {
             override fun onTabSelected(tabContentId: String) {
                 currentActiveTabContentId = tabContentId
@@ -603,8 +611,11 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                         )
                     )
                 }
-                // Invalidate screen to refresh with new tab content
-                currentScreen?.invalidate()
+                // Rebuild the tab template with new active tab and update currentTemplate
+                pluginScope.launch {
+                    currentTemplate = buildTabTemplate(template, tabContentId)
+                    currentScreen?.invalidate()
+                }
             }
         }
 
@@ -627,7 +638,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             }
 
             // Set active tab content
-            val activeContentData = template.tabContents[currentActiveTabContentId]
+            val activeContentData = template.tabContents[activeTabContentId]
             if (activeContentData != null) {
                 val contentTemplate = getTemplateFromData(activeContentData)
                 if (contentTemplate != null) {
@@ -637,7 +648,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                 }
             }
 
-            tabTemplateBuilder.setActiveTabContentId(currentActiveTabContentId)
+            tabTemplateBuilder.setActiveTabContentId(activeTabContentId)
         }
 
         return tabTemplateBuilder.build()

@@ -1,4 +1,5 @@
 export 'package:flutter_carplay/aa_models/action.dart' show AAAction;
+export 'package:flutter_carplay/aa_models/template.dart' show AATemplate;
 export 'package:flutter_carplay/aa_models/grid/grid_item.dart' show AAGridItem;
 export 'package:flutter_carplay/aa_models/grid/grid_template.dart'
     show AAGridTemplate;
