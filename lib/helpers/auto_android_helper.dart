@@ -72,6 +72,9 @@ class FlutterAutoAndroidHelper {
       if (t is AAGridTemplate && t.headerAction?.uniqueId == elementId) {
         return t.headerAction;
       }
+      if (t is AAListTemplate && t.headerAction?.uniqueId == elementId) {
+        return t.headerAction;
+      }
       if (t is AAMessageTemplate && t.headerAction?.uniqueId == elementId) {
         return t.headerAction;
       }

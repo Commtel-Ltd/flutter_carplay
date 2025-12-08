@@ -330,7 +330,31 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             }
         }
 
-        if (addBackButton) {
+        // Handle header action - use template's headerAction or fall back to addBackButton parameter
+        val headerAction = template.headerAction
+        if (headerAction != null) {
+            when (headerAction.type) {
+                FAAHeaderActionType.back -> {
+                    listTemplateBuilder.setHeaderAction(Action.BACK)
+                }
+                FAAHeaderActionType.custom -> {
+                    // Custom actions with titles must use ActionStrip, not setHeaderAction
+                    // setHeaderAction only allows system actions (BACK, APP_ICON) without custom titles
+                    val customActionBuilder = Action.Builder()
+                    headerAction.title?.let { customActionBuilder.setTitle(it) }
+                    customActionBuilder.setOnClickListener {
+                        sendEvent(
+                            type = FAAChannelTypes.onHeaderActionPressed.name,
+                            data = mapOf("elementId" to headerAction.elementId)
+                        )
+                    }
+                    val actionStrip = ActionStrip.Builder()
+                        .addAction(customActionBuilder.build())
+                        .build()
+                    listTemplateBuilder.setActionStrip(actionStrip)
+                }
+            }
+        } else if (addBackButton) {
             listTemplateBuilder.setHeaderAction(Action.BACK)
         }
 
