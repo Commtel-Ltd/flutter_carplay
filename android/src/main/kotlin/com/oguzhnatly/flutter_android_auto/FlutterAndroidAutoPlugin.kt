@@ -951,6 +951,13 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         owningScreen: Screen?,
     ): GridItem {
         val itemBuilder = GridItem.Builder().setTitle(button.title)
+
+        // A grid item cannot show an image and a loading state at the same time.
+        if (button.isLoading) {
+            itemBuilder.setLoading(true)
+            return itemBuilder.build()
+        }
+
         val carIcon = makeCarIconFromBytes(button.imageData)
             ?: if (carContext != null && button.image != null) {
                 resolveCarIcon(carContext, null, button.image)

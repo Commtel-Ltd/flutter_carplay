@@ -25,6 +25,12 @@ class AAGridButton {
   /// (until [complete] is called). When null, no title is shown.
   final String? loadingMessage;
 
+  /// A Boolean value that shows a loading spinner instead of the image.
+  /// When true, the grid cell displays a loading indicator and does not
+  /// respond to taps (Android Auto cannot show an image and a loading state
+  /// at the same time). Defaults to false.
+  final bool isLoading;
+
   /// Callback fired when the user taps this button.
   ///
   /// - `complete` must be called after processing to dismiss the loading screen
@@ -36,6 +42,7 @@ class AAGridButton {
     required this.titleVariants,
     this.image,
     this.loadingMessage,
+    this.isLoading = false,
     this.onPress,
   })  : assert(titleVariants.isNotEmpty, 'titleVariants must not be empty'),
         _elementId = const Uuid().v4();
@@ -47,6 +54,7 @@ class AAGridButton {
         'titleVariants': titleVariants,
         'image': image,
         'loadingMessage': loadingMessage,
+        'isLoading': isLoading,
         'onPress': onPress != null,
       };
 }
