@@ -9,6 +9,7 @@ class AALongMessageTemplate extends AAMessageTemplateBase {
   AALongMessageTemplate({
     required super.title,
     required super.message,
+    super.headerAction,
     super.id,
   });
 

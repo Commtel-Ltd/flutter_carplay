@@ -47,6 +47,30 @@ class FlutterAutoAndroidHelper {
     return null;
   }
 
+  /// Finds an [AAHeaderAction] by its element ID within the template history.
+  AAHeaderAction? findAAHeaderAction({
+    required List<AATemplate> templates,
+    required String elementId,
+  }) {
+    for (final template in templates) {
+      for (final listTemplate in _listTemplates(template)) {
+        if (listTemplate.headerAction?.uniqueId == elementId) {
+          return listTemplate.headerAction;
+        }
+      }
+      for (final gridTemplate in _gridTemplates(template)) {
+        if (gridTemplate.headerAction?.uniqueId == elementId) {
+          return gridTemplate.headerAction;
+        }
+      }
+      if (template is AAMessageTemplateBase &&
+          template.headerAction?.uniqueId == elementId) {
+        return template.headerAction;
+      }
+    }
+    return null;
+  }
+
   AAPaneAction? findAAPaneAction({
     required List<AATemplate> templates,
     required String elementId,

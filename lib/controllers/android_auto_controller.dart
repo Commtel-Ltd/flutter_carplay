@@ -6,6 +6,7 @@ import 'package:flutter_carplay/constants/private_constants.dart';
 import '../aa_models/alert/alert_action.dart';
 import '../aa_models/alert/alert_template.dart';
 import '../aa_models/grid/grid_button.dart';
+import '../aa_models/header_action.dart';
 import '../aa_models/list/list_item.dart';
 import '../aa_models/list/list_section.dart';
 import '../aa_models/list/list_template.dart';
@@ -153,6 +154,15 @@ class FlutterAndroidAutoController {
       toggle.isChecked = checked;
       toggle.onCheckedChange?.call(checked, listItem!);
     }
+  }
+
+  /// Processes header action press events from Android Auto.
+  void processFAAHeaderActionPressedChannel(String elementId) {
+    final AAHeaderAction? headerAction = _androidAutoHelper.findAAHeaderAction(
+      templates: templateHistory,
+      elementId: elementId,
+    );
+    headerAction?.onPressed?.call();
   }
 
   void processFAAPaneActionPressedChannel(String elementId) {

@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../header_action.dart';
 import '../template.dart';
 import 'list_section.dart';
 
@@ -32,6 +33,11 @@ class AAListTemplate implements AATemplate {
   /// Takes precedence over [systemIcon] when set.
   final String? iconUrl;
 
+  /// The header action button displayed in the navigation bar.
+  /// Can be a back button or a custom action with title/icon.
+  /// When not set, pushed templates show the standard back button.
+  final AAHeaderAction? headerAction;
+
   AAListTemplate({
     required this.title,
     required this.sections,
@@ -39,6 +45,7 @@ class AAListTemplate implements AATemplate {
     this.tabTitle,
     this.systemIcon,
     this.iconUrl,
+    this.headerAction,
     String? id,
   })  : assert(
           !sections.any((section) => section.isSelectable) ||
@@ -60,6 +67,7 @@ class AAListTemplate implements AATemplate {
         'tabTitle': tabTitle,
         'systemIcon': systemIcon,
         'iconUrl': iconUrl,
+        'headerAction': headerAction?.toJson(),
       };
 
   void updateSections(List<AAListSection> newSections) {

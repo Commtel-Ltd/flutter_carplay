@@ -2,6 +2,7 @@ import 'package:flutter_carplay/controllers/android_auto_controller.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../constants/private_constants.dart';
+import '../header_action.dart';
 import '../template.dart';
 
 abstract class AAMessageTemplateBase implements AATemplate {
@@ -11,9 +12,15 @@ abstract class AAMessageTemplateBase implements AATemplate {
   String title;
   String message;
 
+  /// The header action button displayed in the navigation bar.
+  /// Can be a back button or a custom action with title/icon.
+  /// When not set, pushed templates show the standard back button.
+  final AAHeaderAction? headerAction;
+
   AAMessageTemplateBase({
     required this.title,
     required this.message,
+    this.headerAction,
     String? id,
   }) : _elementId = id ?? const Uuid().v4() {
     _validateMessage(message);
@@ -29,6 +36,7 @@ abstract class AAMessageTemplateBase implements AATemplate {
         '_elementId': _elementId,
         'title': title,
         'message': message,
+        'headerAction': headerAction?.toJson(),
       };
 
   /// Updates the template content on Android Auto.

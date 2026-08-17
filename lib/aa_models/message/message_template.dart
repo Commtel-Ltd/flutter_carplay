@@ -6,7 +6,12 @@ class AAMessageTemplate extends AAMessageTemplateBase {
   ///
   /// [message] must not be empty because Android Auto requires a non-empty
   /// message when building the native template.
-  AAMessageTemplate({required super.title, required super.message, super.id});
+  AAMessageTemplate({
+    required super.title,
+    required super.message,
+    super.headerAction,
+    super.id,
+  });
 
   @override
   FAAChannelTypes get updateChannelType =>

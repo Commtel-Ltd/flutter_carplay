@@ -68,6 +68,11 @@ class FlutterAndroidAuto {
             event['data']['elementId'],
           );
           break;
+        case FAAChannelTypes.onHeaderActionPressed:
+          _androidAutoController.processFAAHeaderActionPressedChannel(
+            event['data']['elementId'],
+          );
+          break;
 
         case FAAChannelTypes.onScreenBackButtonPressed:
           FlutterAndroidAutoController.templateHistory.removeWhere(

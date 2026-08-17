@@ -4,6 +4,7 @@ import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
 import androidx.car.app.model.Action
+import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.CarText
@@ -318,11 +319,12 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             return
         }
 
-        val data = mutableMapOf<String, Any?>(
-            "_elementId" to elementId,
-            "title" to (call.argument<String>("title") ?: ""),
-            "message" to (call.argument<String>("message") ?: ""),
-        )
+        // Merge into any stored data so fields such as headerAction survive updates.
+        val data = (templateDataByElementId[elementId] ?: emptyMap()).toMutableMap().apply {
+            put("_elementId", elementId)
+            put("title", call.argument<String>("title") ?: "")
+            put("message", call.argument<String>("message") ?: "")
+        }
         storeTemplateData(elementId, runtimeType, data, templateBackButtons[elementId] ?: true, screensByElementId[elementId])
         rebuildElementTemplate(elementId, result)
     }
@@ -602,6 +604,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         createBuilder = { MessageTemplate.Builder(it) },
         setTitle = { title -> setTitle(title) },
         setHeaderAction = { action -> setHeaderAction(action) },
+        setActionStrip = { actionStrip -> setActionStrip(actionStrip) },
         build = { build() },
     )
 
@@ -614,6 +617,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         createBuilder = { LongMessageTemplate.Builder(it) },
         setTitle = { title -> setTitle(title) },
         setHeaderAction = { action -> setHeaderAction(action) },
+        setActionStrip = { actionStrip -> setActionStrip(actionStrip) },
         build = { build() },
     )
 
@@ -623,13 +627,58 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         createBuilder: (String) -> Builder,
         setTitle: Builder.(String) -> Unit,
         setHeaderAction: Builder.(Action) -> Unit,
+        setActionStrip: Builder.(ActionStrip) -> Unit,
         build: Builder.() -> Template,
     ): Template {
         val template = FAAMessageTemplate.fromJson(data)
         val builder = createBuilder(template.message)
         builder.setTitle(template.title)
-        if (addBackButton) builder.setHeaderAction(Action.BACK)
+        applyHeaderAction(
+            data,
+            addBackButton,
+            { builder.setHeaderAction(it) },
+            { builder.setActionStrip(it) },
+        )
         return builder.build()
+    }
+
+    /**
+     * Applies the template's optional custom header action, falling back to the
+     * default back-button behaviour when none is provided.
+     */
+    private fun applyHeaderAction(
+        data: Map<String, Any?>,
+        addBackButton: Boolean,
+        setHeaderAction: (Action) -> Unit,
+        setActionStrip: (ActionStrip) -> Unit,
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        val headerAction = FAAHeaderAction.fromJson(data["headerAction"] as? Map<String, Any?>)
+        if (headerAction == null) {
+            if (addBackButton) setHeaderAction(Action.BACK)
+            return
+        }
+
+        when (headerAction.type) {
+            FAAHeaderActionType.back -> setHeaderAction(Action.BACK)
+            FAAHeaderActionType.custom -> {
+                // Custom actions with titles must use ActionStrip, not setHeaderAction:
+                // setHeaderAction only allows system actions (BACK, APP_ICON).
+                val customActionBuilder = Action.Builder()
+                headerAction.title?.let { customActionBuilder.setTitle(it) }
+                customActionBuilder.setOnClickListener {
+                    sendEvent(
+                        type = FAAChannelTypes.onHeaderActionPressed.name,
+                        data = mapOf("elementId" to headerAction.elementId)
+                    )
+                }
+                setActionStrip(
+                    ActionStrip.Builder()
+                        .addAction(customActionBuilder.build())
+                        .build()
+                )
+            }
+        }
     }
 
     private suspend fun getPaneTemplate(
@@ -742,7 +791,12 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             }
         }
 
-        if (addBackButton) builder.setHeaderAction(Action.BACK)
+        applyHeaderAction(
+            data,
+            addBackButton,
+            { builder.setHeaderAction(it) },
+            { builder.setActionStrip(it) },
+        )
         return builder.build()
     }
 
@@ -880,7 +934,12 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             builder.setSingleList(itemListBuilder.build())
         }
 
-        if (addBackButton) builder.setHeaderAction(Action.BACK)
+        applyHeaderAction(
+            data,
+            addBackButton,
+            { builder.setHeaderAction(it) },
+            { builder.setActionStrip(it) },
+        )
         return builder.build()
     }
 
