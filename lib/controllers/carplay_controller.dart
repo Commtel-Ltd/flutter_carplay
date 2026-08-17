@@ -191,6 +191,43 @@ class FlutterCarPlayController {
     );
   }
 
+  static void updateCPGridButton(CPGridButton updatedGridButton) {
+    flutterToNativeModule(
+      FCPChannelTypes.updateGridButton,
+      updatedGridButton.toJson(),
+    ).then(
+      (value) {
+        if (value != true) return;
+
+        for (var h in templateHistory) {
+          switch (h) {
+            case CPTabBarTemplate _:
+              for (var t in h.templates) {
+                if (t is CPGridTemplate) {
+                  for (var b in t.buttons) {
+                    if (b.uniqueId == updatedGridButton.uniqueId) {
+                      t.buttons[t.buttons.indexOf(b)] = updatedGridButton;
+                      return;
+                    }
+                  }
+                }
+              }
+              break;
+            case CPGridTemplate _:
+              for (var b in h.buttons) {
+                if (b.uniqueId == updatedGridButton.uniqueId) {
+                  h.buttons[h.buttons.indexOf(b)] = updatedGridButton;
+                  return;
+                }
+              }
+              break;
+            default:
+          }
+        }
+      },
+    );
+  }
+
   static Future<int?> getMaximumNumberOfGridImages() async {
     final value = await _methodChannel.invokeMethod<int>(
       FCPChannelTypes.getMaximumNumberOfGridImages.name,

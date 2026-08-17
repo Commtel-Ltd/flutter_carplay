@@ -181,6 +181,22 @@ public class SwiftFlutterCarplayPlugin: NSObject, FlutterPlugin {
         })
       result(true)
       break
+    case FCPChannelTypes.updateGridButton:
+      guard let args = call.arguments as? [String: Any] else {
+        result(false)
+        return
+      }
+      let elementId = args["_elementId"] as! String
+      let isEnabled = args["isEnabled"] as? Bool
+      SwiftFlutterCarplayPlugin.findGridButton(
+        elementId: elementId,
+        actionWhenFound: { gridButton in
+          if let isEnabled = isEnabled {
+            gridButton.setEnabled(isEnabled)
+          }
+        })
+      result(true)
+      break
     case FCPChannelTypes.updateListImageRowItem:
       guard let args = call.arguments as? [String: Any] else {
         result(false)
@@ -542,6 +558,34 @@ public class SwiftFlutterCarplayPlugin: NSObject, FlutterPlugin {
       }
     }
     NSLog("FCP: FCPListImageRowItemElement not found with elementId: \(elementId)")
+  }
+
+  static func findGridButton(
+    elementId: String, actionWhenFound: (_ gridButton: FCPGridButton) -> Void
+  ) {
+    var collected: [FCPGridTemplate] = []
+
+    for template in SwiftFlutterCarplayPlugin.templateStack {
+      if let tabBar = template as? FCPTabBarTemplate {
+        for child in tabBar.getFCPTemplates() {
+          if let grid = child as? FCPGridTemplate {
+            collected.append(grid)
+          }
+        }
+      } else if let grid = template as? FCPGridTemplate {
+        collected.append(grid)
+      }
+    }
+
+    for t in collected {
+      for b in t.getButtons() {
+        if b.elementId == elementId {
+          actionWhenFound(b)
+          return
+        }
+      }
+    }
+    NSLog("FCP: Grid button not found with elementId: \(elementId)")
   }
 
   static public func getTemplateFromHistory(elementId: String) -> FCPTemplate? {

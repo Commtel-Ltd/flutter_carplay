@@ -19,6 +19,7 @@ enum FCPChannelTypes {
   pushTemplate,
   showNowPlaying,
   onGridButtonPressed,
+  updateGridButton,
   setActionSheet,
   onBarButtonPressed,
   onTextButtonPressed,

@@ -17,6 +17,7 @@ class FCPGridButton {
   private var imageData: FlutterStandardTypedData?
   private var imageTint: FCPImageTint?
   private var isOnPressListenerActive: Bool
+  private var isEnabled: Bool
 
   init(obj: [String: Any]) {
     self.elementId = obj["_elementId"] as! String
@@ -25,6 +26,7 @@ class FCPGridButton {
     self.imageData = obj["imageData"] as? FlutterStandardTypedData
     self.imageTint = FCPImageTint(from: obj["imageTint"] as? [String: Any])
     self.isOnPressListenerActive = obj["onPress"] as? Bool ?? false
+    self.isEnabled = obj["isEnabled"] as? Bool ?? true
   }
 
   var get: CPGridButton {
@@ -68,8 +70,13 @@ class FCPGridButton {
       }
     }
 
-    gridButton.isEnabled = true
+    gridButton.isEnabled = self.isEnabled
     self._super = gridButton
     return gridButton
+  }
+
+  public func setEnabled(_ enabled: Bool) {
+    self.isEnabled = enabled
+    self._super?.isEnabled = enabled
   }
 }

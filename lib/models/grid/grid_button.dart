@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../../controllers/carplay_controller.dart';
 import '../common/image_tint.dart';
 
 /// A menu item button displayed on a grid template.
@@ -38,12 +39,17 @@ class CPGridButton {
   /// iOS 12.0+ | iPadOS 12.0+ | Mac Catalyst 13.1+
   final Function()? onPress;
 
+  /// A Boolean value that enables and disables the grid button.
+  /// Defaults to true.
+  bool isEnabled;
+
   /// Creates [CPGridButton]
   CPGridButton({
     required this.titleVariants,
     required this.image,
     this.imageTint,
     this.onPress,
+    this.isEnabled = true,
     String? id,
   }) : _elementId = id ?? const Uuid().v4();
 
@@ -53,10 +59,18 @@ class CPGridButton {
         'image': image,
         'imageTint': imageTint?.toJson(),
         'onPress': onPress != null ? true : false,
+        'isEnabled': isEnabled,
         'runtimeType': 'FCPGridButton',
       };
 
   String get uniqueId {
     return _elementId;
+  }
+
+  /// Updates the enabled state of this grid button.
+  /// Call this method to enable or disable the button in the CarPlay interface.
+  void setEnabled(bool enabled) {
+    isEnabled = enabled;
+    FlutterCarPlayController.updateCPGridButton(this);
   }
 }

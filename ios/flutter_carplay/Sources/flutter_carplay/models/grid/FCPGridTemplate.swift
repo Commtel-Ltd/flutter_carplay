@@ -50,6 +50,10 @@ class FCPGridTemplate {
       return
     }
   }
+
+  public func getButtons() -> [FCPGridButton] {
+    return objcButtons
+  }
 }
 
 @available(iOS 14.0, *)
