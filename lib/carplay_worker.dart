@@ -452,4 +452,27 @@ class FlutterCarplay {
     );
     return isCompleted ?? false;
   }
+
+  /// Programmatically selects a tab in a [CPTabBarTemplate].
+  ///
+  /// - [elementId] is the unique id of the tab bar template.
+  /// - [index] is the zero-based index of the tab to select.
+  ///
+  /// Requires iOS 17.0 or later on the native side.
+  ///
+  /// Returns `true` if the tab was successfully selected, `false` otherwise.
+  static Future<bool> selectTabBarIndex({
+    required String elementId,
+    required int index,
+  }) async {
+    final bool? isCompleted =
+        await FlutterCarPlayController.flutterToNativeModule(
+      FCPChannelTypes.selectTabBarIndex,
+      <String, dynamic>{
+        'elementId': elementId,
+        'index': index,
+      },
+    );
+    return isCompleted ?? false;
+  }
 }

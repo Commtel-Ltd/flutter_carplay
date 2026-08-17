@@ -26,6 +26,7 @@ enum FCPChannelTypes {
   popToRootTemplate,
   onScreenBackButtonPressed,
   updateTabBarTemplates,
+  selectTabBarIndex,
   updateListTemplateSections,
   updateInformationTemplateItems,
   updateInformationTemplateActions,
