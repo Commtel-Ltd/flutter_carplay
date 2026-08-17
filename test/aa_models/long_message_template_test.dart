@@ -25,6 +25,7 @@ void main() {
         '_elementId': '<AALongMessageTemplate>',
         'title': 'Terms and conditions',
         'message': 'Read these longer terms before continuing in Android Auto.',
+        'headerAction': null,
       });
     });
 

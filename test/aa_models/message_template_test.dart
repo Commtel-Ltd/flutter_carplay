@@ -25,6 +25,7 @@ void main() {
         '_elementId': '<AAMessageTemplate>',
         'title': 'No saved places',
         'message': 'Save places on your phone to access them here.',
+        'headerAction': null,
       });
     });
 
