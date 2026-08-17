@@ -51,6 +51,15 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         private var currentTabBarData: FAATabBarTemplate? = null
         private var activeTabContentId: String? = null
         private var pendingTemplateElementId: String? = null
+        private var pendingRootGeneration: Int = 0
+
+        // Bumped every time the visible root/tab-bar content changes (setRootTemplate,
+        // updateTabBarTemplates, push, pop). A tap on a list/grid item snapshots this
+        // value; if it no longer matches once the tap's onPress handler finishes, the
+        // root has already moved on (e.g. navigated to a different template) and the
+        // pending "restore this item's template" rebuild must be skipped so it doesn't
+        // stomp that navigation with stale data.
+        private var rootGeneration: Int = 0
 
         private val templateDataByElementId = mutableMapOf<String, MutableMap<String, Any?>>()
         private val templateRuntimeTypes = mutableMapOf<String, String>()
@@ -125,6 +134,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         val screenManager = carContext.getCarService(ScreenManager::class.java)
         if (screenManager.stackSize > 1) {
             screenManager.pop()
+            rootGeneration++
             result.success(true)
         } else {
             result.error("No screens to pop", "You are at root screen", null)
@@ -141,6 +151,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         val screenManager = carContext.getCarService(ScreenManager::class.java)
         if (screenManager.stackSize > 1) {
             screenManager.popToRoot()
+            rootGeneration++
             result.success(true)
         } else {
             result.error("No screens to pop", "You are at root screen", null)
@@ -157,8 +168,15 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
 
     private fun rebuildPendingTemplate(result: MethodChannel.Result) {
         val elementId = pendingTemplateElementId
+        val expectedGeneration = pendingRootGeneration
         pendingTemplateElementId = null
         if (elementId == null) {
+            result.success(true)
+            return
+        }
+        if (rootGeneration != expectedGeneration) {
+            // The root/tab bar already changed since this item was tapped (its
+            // onPress handler navigated elsewhere). Don't stomp that navigation.
             result.success(true)
             return
         }
@@ -259,6 +277,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         pluginScope.launch {
             val tabBarTemplate = FAATabBarTemplate.fromJson(data)
             currentTabBarData = tabBarTemplate
+            rootGeneration++
             storeTemplateData(tabBarTemplate.elementId, "FAATabBarTemplate", data, false, currentScreen)
             storeTabData(tabBarTemplate)
             if (tabBarTemplate.tabs.none { it.elementId == activeTabContentId }) {
@@ -370,6 +389,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             storeTemplateData(elementId, runtimeType, data, true, newScreen)
             templatesByElementId[elementId] = template
             carContext.getCarService(ScreenManager::class.java).push(newScreen)
+            rootGeneration++
             result.success(true)
         }
     }
@@ -388,6 +408,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             if (template == null) return@launch
 
             currentRootTemplateElementId = elementId
+            rootGeneration++
             currentTemplate = template
             storeTemplateData(elementId, runtimeType, data, false, currentScreen)
             templatesByElementId[elementId] = template
@@ -864,7 +885,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         if (imageIcon != null) {
             rowBuilder.setImage(
                 imageIcon,
-                if (item.imageTint != null) Row.IMAGE_TYPE_ICON else Row.IMAGE_TYPE_SMALL,
+                if (item.imageTint != null) Row.IMAGE_TYPE_ICON else Row.IMAGE_TYPE_LARGE,
             )
         }
 
@@ -983,6 +1004,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         loadingMessage: String? = null,
     ) {
         pendingTemplateElementId = templateElementId
+        pendingRootGeneration = rootGeneration
         val loading = buildLoadingTemplate(runtimeType, loadingMessage, templateBackButtons[templateElementId] ?: false)
 
         if (currentTabBarData != null && currentTabBarData!!.tabs.any { it.elementId == templateElementId }) {
