@@ -69,6 +69,7 @@ enum ImageSource {
   case url(URL)
   case file(String)
   case flutterAsset(String)
+  case base64(String)
 }
 
 // String → ImageSource
@@ -78,10 +79,37 @@ extension String {
       return .url(URL(string: self)!)
     } else if self.starts(with: "file://") {
       return .file(self.replacingOccurrences(of: "file://", with: ""))
+    } else if let base64String = self.asBase64ImagePayload() {
+      return .base64(base64String)
     } else {
       return .flutterAsset(self)
     }
   }
+
+  /// Returns the raw base64 payload when the string is a base64-encoded image,
+  /// either a "data:image/...;base64,..." data URL or a raw base64 blob.
+  fileprivate func asBase64ImagePayload() -> String? {
+    if self.starts(with: "data:image") {
+      guard let commaIndex = self.firstIndex(of: ",") else { return nil }
+      return String(self[self.index(after: commaIndex)...])
+    }
+    // Raw base64 payloads are far longer than any asset path; validate before use.
+    guard self.count > 100,
+      Data(base64Encoded: self, options: .ignoreUnknownCharacters) != nil
+    else { return nil }
+    return self
+  }
+}
+
+private func decodeBase64Image(_ base64String: String) throws -> UIImage {
+  guard let data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters),
+    let image = UIImage(data: data)
+  else {
+    throw NSError(
+      domain: "ImageLoadError", code: 5,
+      userInfo: [NSLocalizedDescriptionKey: "Invalid base64 image data"])
+  }
+  return image
 }
 
 func makeSafeUIPlaceholder() -> UIImage {
@@ -148,6 +176,9 @@ func makeUIImage(
           userInfo: [NSLocalizedDescriptionKey: "Failed to decode image at path: \(path)"])
       }
       return image
+
+    case .base64(let base64String):
+      return try decodeBase64Image(base64String)
     }
   } catch {
     errorCallback?(error)
@@ -222,6 +253,19 @@ func loadUIImageAsync(
       } catch {
         errorCallback?(error)
         completion(makeUIPlaceholder())
+      }
+    }
+
+  case .base64(let base64String):
+    DispatchQueue.global(qos: .userInitiated).async {
+      do {
+        let image = try decodeBase64Image(base64String)
+        DispatchQueue.main.async { completion(image) }
+      } catch {
+        DispatchQueue.main.async {
+          errorCallback?(error)
+          completion(makeUIPlaceholder())
+        }
       }
     }
   }

@@ -2,6 +2,7 @@ package com.oguzhnatly.flutter_android_auto
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.car.app.model.CarIcon
 import androidx.core.graphics.drawable.IconCompat
 import io.flutter.FlutterInjector
@@ -84,7 +85,46 @@ suspend fun resolveCarIcon(
     return when {
         source.startsWith("http") -> loadCarImageAsync(source, imageTint)
         source.startsWith("file://") -> loadCarImageFromFile(source, imageTint)
+        isBase64ImageSource(source) -> loadCarImageFromBase64(source, imageTint)
         else -> loadCarImageFromAsset(context, source, imageTint)
+    }
+}
+
+/**
+ * Detects base64 image sources: either a "data:image/...;base64,..." data URL
+ * or a raw base64 blob (far longer than any asset path).
+ */
+private fun isBase64ImageSource(source: String): Boolean {
+    if (source.startsWith("data:image")) return true
+    if (source.length <= 100) return false
+    return try {
+        Base64.decode(source, Base64.DEFAULT)
+        true
+    } catch (e: IllegalArgumentException) {
+        false
+    }
+}
+
+suspend fun loadCarImageFromBase64(
+    dataString: String,
+    imageTint: FAAImageTint? = null,
+): CarIcon? {
+    return withContext(Dispatchers.IO) {
+        try {
+            val base64String = if (dataString.startsWith("data:image")) {
+                dataString.substringAfter(",")
+            } else {
+                dataString
+            }
+            val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+            val bitmap =
+                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                    ?: return@withContext null
+            bitmap.toCarIcon(imageTint)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }
 
