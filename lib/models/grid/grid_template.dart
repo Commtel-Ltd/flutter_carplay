@@ -1,6 +1,7 @@
 import 'package:flutter_carplay/models/grid/grid_button.dart';
 import 'package:uuid/uuid.dart';
 
+import '../button/bar_button.dart';
 import '../template.dart';
 
 /// Creates a grid template with a title and a set of buttons.
@@ -19,12 +20,16 @@ class CPGridTemplate extends CPTemplate {
   /// iOS 12.0+ | iPadOS 12.0+ | Mac Catalyst 13.1+
   final List<CPGridButton> buttons;
 
+  /// An optional back button displayed in the template's navigation bar.
+  final CPBarButton? backButton;
+
   /// Creates [CPGridTemplate] in order to display a grid of items as buttons.
   /// When creating the grid template, provide an array of [CPGridButton] objects.
   /// Each button must contain a title that is shown in the grid template's navigation bar.
   CPGridTemplate({
     required this.title,
     required this.buttons,
+    this.backButton,
     super.tabTitle,
     super.showsTabBadge = false,
     super.systemIcon,
@@ -37,6 +42,7 @@ class CPGridTemplate extends CPTemplate {
         '_elementId': _elementId,
         'title': title,
         'buttons': buttons.map((e) => e.toJson()).toList(),
+        'backButton': backButton?.toJson(),
         'tabTitle': tabTitle,
         'showsTabBadge': showsTabBadge,
         'systemIcon': systemIcon,

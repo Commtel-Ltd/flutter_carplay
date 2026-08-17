@@ -363,17 +363,20 @@ class FlutterCarPlayController {
 
   void processFCPBarButtonPressed(String elementId) {
     for (var t in templateHistory) {
-      final List<CPListTemplate> listTemplates = [];
+      final List<CPBarButton?> backButtons = [];
       if (t is CPTabBarTemplate) {
         for (var template in t.templates) {
-          if (template is CPListTemplate) listTemplates.add(template);
+          if (template is CPListTemplate) backButtons.add(template.backButton);
+          if (template is CPGridTemplate) backButtons.add(template.backButton);
         }
       } else if (t is CPListTemplate) {
-        listTemplates.add(t);
+        backButtons.add(t.backButton);
+      } else if (t is CPGridTemplate) {
+        backButtons.add(t.backButton);
       }
-      for (var list in listTemplates) {
-        if (list.backButton?.uniqueId == elementId) {
-          list.backButton?.onPress();
+      for (var backButton in backButtons) {
+        if (backButton?.uniqueId == elementId) {
+          backButton?.onPress();
           return;
         }
       }
