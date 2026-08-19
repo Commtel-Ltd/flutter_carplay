@@ -1,5 +1,7 @@
 package com.oguzhnatly.flutter_android_auto
 
+import android.content.Context
+import android.util.Log
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
@@ -30,18 +32,30 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
-    private val pluginScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    // Last-resort guard: an exception escaping a coroutine on Dispatchers.Main
+    // would otherwise kill the whole process (spinner on the head unit, app
+    // never opens). Individual launch bodies also catch so the MethodChannel
+    // result can report the error back to Dart.
+    private val pluginScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main +
+            CoroutineExceptionHandler { _, e -> Log.e(TAG, "Uncaught error in pluginScope", e) }
+    )
 
     lateinit var channel: MethodChannel
     lateinit var eventChannel: EventChannel
 
     companion object {
+        private const val TAG = "FlutterAndroidAuto"
+
+        internal var instance: FlutterAndroidAutoPlugin? = null
+
         var events: EventChannel.EventSink? = null
         var currentTemplate: Template? = null
         var currentScreen: Screen? = null
@@ -77,9 +91,55 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                 data = mapOf("status" to status.name)
             )
         }
+
+        /**
+         * Re-renders the current root once a car session (and its CarContext)
+         * exists. Templates set before the session was available were built
+         * without a CarContext — tab bars silently degrade and asset icons
+         * drop — and nothing else triggers a rebuild afterwards. Called from
+         * the session's lifecycle onStart.
+         */
+        fun onSessionStarted() {
+            val plugin = instance ?: return
+            plugin.pluginScope.launch {
+                try {
+                    // A pending tap-loading state set before the session
+                    // existed can never complete; drop it so the root renders.
+                    pendingTemplateElementId = null
+
+                    val tabBar = currentTabBarData
+                    val rootId = currentRootTemplateElementId
+                    if (tabBar != null) {
+                        currentTemplate = plugin.buildNativeTabTemplate(tabBar)
+                        currentScreen?.invalidate()
+                    } else if (rootId != null) {
+                        val runtimeType = templateRuntimeTypes[rootId]
+                        val data = templateDataByElementId[rootId]
+                        if (runtimeType != null && data != null) {
+                            val template = plugin.buildTemplateForType(
+                                runtimeType,
+                                data,
+                                templateBackButtons[rootId] ?: false,
+                                currentScreen,
+                                null,
+                            )
+                            if (template != null) {
+                                currentTemplate = template
+                                templatesByElementId[rootId] = template
+                                currentScreen?.invalidate()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to re-render root after session start", e)
+                }
+            }
+        }
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        instance = this
+        FAAHelpers.flutterPluginBinding = flutterPluginBinding
         channel = MethodChannel(
             flutterPluginBinding.binaryMessenger,
             FAAHelpers.makeFCPChannelId("")
@@ -118,6 +178,13 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         }
         eventChannel.setStreamHandler(this)
     }
+
+    /// Context for icon resolution: prefer the live CarContext, falling back
+    /// to the application context so asset/file icons still resolve before a
+    /// car session exists (e.g. templates set during a killed-state launch).
+    private fun iconContext(): Context? =
+        AndroidAutoService.session?.carContext
+            ?: FAAHelpers.flutterPluginBinding?.applicationContext
 
     private fun forceUpdateRootTemplate(call: MethodCall, result: MethodChannel.Result) {
         currentScreen?.invalidate()
@@ -197,6 +264,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         }
 
         pluginScope.launch {
+            try {
             val alertTemplate = FAAAlertTemplate.fromJson(data)
             val messageTemplate = buildAlertMessageTemplate(alertTemplate)
 
@@ -224,6 +292,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             currentAlertScreen = alertScreen
             carContext.getCarService(ScreenManager::class.java).push(alertScreen)
             result.success(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "setAlert failed", e)
+                result.error("template_error", e.message, null)
+            }
         }
     }
 
@@ -275,17 +347,22 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         }
 
         pluginScope.launch {
-            val tabBarTemplate = FAATabBarTemplate.fromJson(data)
-            currentTabBarData = tabBarTemplate
-            rootGeneration++
-            storeTemplateData(tabBarTemplate.elementId, "FAATabBarTemplate", data, false, currentScreen)
-            storeTabData(tabBarTemplate)
-            if (tabBarTemplate.tabs.none { it.elementId == activeTabContentId }) {
-                activeTabContentId = tabBarTemplate.tabs.firstOrNull()?.elementId
+            try {
+                val tabBarTemplate = FAATabBarTemplate.fromJson(data)
+                currentTabBarData = tabBarTemplate
+                rootGeneration++
+                storeTemplateData(tabBarTemplate.elementId, "FAATabBarTemplate", data, false, currentScreen)
+                storeTabData(tabBarTemplate)
+                if (tabBarTemplate.tabs.none { it.elementId == activeTabContentId }) {
+                    activeTabContentId = tabBarTemplate.tabs.firstOrNull()?.elementId
+                }
+                currentTemplate = buildNativeTabTemplate(tabBarTemplate)
+                currentScreen?.invalidate()
+                result.success(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "updateTabBarTemplates failed", e)
+                result.error("template_error", e.message, null)
             }
-            currentTemplate = buildNativeTabTemplate(tabBarTemplate)
-            currentScreen?.invalidate()
-            result.success(true)
         }
     }
 
@@ -364,6 +441,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         val elementId = data["_elementId"] as? String ?: ""
 
         pluginScope.launch {
+            try {
             val newScreen = object : Screen(carContext) {
                 override fun onGetTemplate(): Template = templatesByElementId[elementId]
                     ?: getTemplateBlocking(runtimeType, data, true, this)
@@ -391,6 +469,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             carContext.getCarService(ScreenManager::class.java).push(newScreen)
             rootGeneration++
             result.success(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "pushTemplate failed", e)
+                result.error("template_error", e.message, null)
+            }
         }
     }
 
@@ -404,16 +486,21 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         val elementId = data["_elementId"] as? String ?: ""
 
         pluginScope.launch {
-            val template = buildTemplateForType(runtimeType, data, false, currentScreen, result)
-            if (template == null) return@launch
+            try {
+                val template = buildTemplateForType(runtimeType, data, false, currentScreen, result)
+                if (template == null) return@launch
 
-            currentRootTemplateElementId = elementId
-            rootGeneration++
-            currentTemplate = template
-            storeTemplateData(elementId, runtimeType, data, false, currentScreen)
-            templatesByElementId[elementId] = template
-            currentScreen?.invalidate()
-            result.success(true)
+                currentRootTemplateElementId = elementId
+                rootGeneration++
+                currentTemplate = template
+                storeTemplateData(elementId, runtimeType, data, false, currentScreen)
+                templatesByElementId[elementId] = template
+                currentScreen?.invalidate()
+                result.success(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "setRootTemplate failed", e)
+                result.error("template_error", e.message, null)
+            }
         }
     }
 
@@ -426,32 +513,37 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         }
 
         pluginScope.launch {
-            val template = if (currentTabBarData != null && currentTabBarData!!.tabs.any { it.elementId == elementId }) {
-                buildNativeTabTemplate(currentTabBarData!!)
-            } else {
-                buildTemplateForType(
-                    runtimeType,
-                    data,
-                    templateBackButtons[elementId] ?: true,
-                    screensByElementId[elementId],
-                    result,
-                )
-            }
-            if (template == null) return@launch
+            try {
+                val template = if (currentTabBarData != null && currentTabBarData!!.tabs.any { it.elementId == elementId }) {
+                    buildNativeTabTemplate(currentTabBarData!!)
+                } else {
+                    buildTemplateForType(
+                        runtimeType,
+                        data,
+                        templateBackButtons[elementId] ?: true,
+                        screensByElementId[elementId],
+                        result,
+                    )
+                }
+                if (template == null) return@launch
 
-            if (currentTabBarData != null && currentTabBarData!!.tabs.any { it.elementId == elementId }) {
-                currentTemplate = template
-                currentScreen?.invalidate()
-            } else {
-                templatesByElementId[elementId] = template
-                if (currentRootTemplateElementId == elementId) {
+                if (currentTabBarData != null && currentTabBarData!!.tabs.any { it.elementId == elementId }) {
                     currentTemplate = template
                     currentScreen?.invalidate()
                 } else {
-                    screensByElementId[elementId]?.invalidate()
+                    templatesByElementId[elementId] = template
+                    if (currentRootTemplateElementId == elementId) {
+                        currentTemplate = template
+                        currentScreen?.invalidate()
+                    } else {
+                        screensByElementId[elementId]?.invalidate()
+                    }
                 }
+                result.success(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "rebuildElementTemplate failed", e)
+                result.error("template_error", e.message, null)
             }
-            result.success(true)
         }
     }
 
@@ -539,15 +631,19 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         val tabCallback = object : TabTemplate.TabCallback {
             override fun onTabSelected(tabContentId: String) {
                 pluginScope.launch {
-                    activeTabContentId = tabContentId
-                    currentTabBarData?.let {
-                        currentTemplate = buildNativeTabTemplate(it)
-                        currentScreen?.invalidate()
+                    try {
+                        activeTabContentId = tabContentId
+                        currentTabBarData?.let {
+                            currentTemplate = buildNativeTabTemplate(it)
+                            currentScreen?.invalidate()
+                        }
+                        sendEvent(
+                            type = FAAChannelTypes.onTabBarItemSelected.name,
+                            data = mapOf("elementId" to tabContentId)
+                        )
+                    } catch (e: Exception) {
+                        Log.e(TAG, "onTabSelected failed", e)
                     }
-                    sendEvent(
-                        type = FAAChannelTypes.onTabBarItemSelected.name,
-                        data = mapOf("elementId" to tabContentId)
-                    )
                 }
             }
         }
@@ -586,7 +682,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         return data["tabTitle"] as? String ?: data["title"] as? String ?: tab.tabTitle
     }
 
-    private suspend fun resolveTabIcon(carContext: CarContext?, tab: FAATabBarItem): CarIcon {
+    private suspend fun resolveTabIcon(carContext: Context?, tab: FAATabBarItem): CarIcon {
         val data = templateDataByElementId[tab.elementId] ?: tab.templateData
         val iconUrl = data["iconUrl"] as? String ?: tab.iconUrl
         if (carContext != null && !iconUrl.isNullOrBlank()) {
@@ -706,7 +802,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         data: Map<String, Any?>,
         addBackButton: Boolean = true,
     ): Template {
-        val carContext = AndroidAutoService.session?.carContext
+        val carContext = iconContext()
         val template = FAAPaneTemplate.fromJson(data)
         val paneBuilder = Pane.Builder()
 
@@ -734,7 +830,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     }
 
     private suspend fun createPaneRowFromItem(
-        carContext: CarContext?,
+        carContext: Context?,
         item: FAAPaneItem,
     ): Row {
         val rowBuilder = Row.Builder().setTitle(CarText.create(item.title))
@@ -754,7 +850,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     }
 
     private suspend fun createPaneAction(
-        carContext: CarContext?,
+        carContext: Context?,
         action: FAAPaneAction,
     ): Action {
         val actionBuilder = Action.Builder().setTitle(action.title)
@@ -780,19 +876,19 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         addBackButton: Boolean = true,
         owningScreen: Screen? = null,
     ): Template {
-        val carContext = AndroidAutoService.session?.carContext
+        val carContext = iconContext()
         val template = FAAListTemplate.fromJson(data)
         val builder = ListTemplate.Builder().setTitle(template.title)
         val emptyMessage = template.emptyViewTitleVariants.firstOrNull()
         val isEmpty = template.sections.isEmpty() || template.sections.all { it.items.isEmpty() }
 
         if (isEmpty) {
-            if (emptyMessage != null) {
-                builder.setLoading(false)
-                builder.setSingleList(ItemList.Builder().setNoItemsMessage(emptyMessage).build())
-            } else {
-                builder.setLoading(true)
-            }
+            // An empty template must not render as an endless spinner: show a
+            // "no items" state instead (custom message when one was provided).
+            builder.setLoading(false)
+            builder.setSingleList(
+                ItemList.Builder().setNoItemsMessage(emptyMessage ?: "No items").build()
+            )
         } else {
             builder.setLoading(false)
             val isSingleList = template.sections.size == 1 && template.sections.first().title.isEmpty()
@@ -822,7 +918,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     }
 
     private suspend fun createItemListFromSection(
-        carContext: CarContext?,
+        carContext: Context?,
         section: FAAListSection,
         templateElementId: String,
         runtimeType: String,
@@ -868,7 +964,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     }
 
     private suspend fun createRowFromItem(
-        carContext: CarContext?,
+        carContext: Context?,
         item: FAAListItem,
         templateElementId: String,
         runtimeType: String,
@@ -932,18 +1028,18 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         addBackButton: Boolean = true,
         owningScreen: Screen? = null,
     ): Template {
-        val carContext = AndroidAutoService.session?.carContext
+        val carContext = iconContext()
         val template = FAAGridTemplate.fromJson(data)
         val builder = GridTemplate.Builder().setTitle(template.title)
         val emptyMessage = template.emptyViewTitleVariants.firstOrNull()
 
         if (template.buttons.isEmpty()) {
-            if (emptyMessage != null) {
-                builder.setLoading(false)
-                builder.setSingleList(ItemList.Builder().setNoItemsMessage(emptyMessage).build())
-            } else {
-                builder.setLoading(true)
-            }
+            // An empty template must not render as an endless spinner: show a
+            // "no items" state instead (custom message when one was provided).
+            builder.setLoading(false)
+            builder.setSingleList(
+                ItemList.Builder().setNoItemsMessage(emptyMessage ?: "No items").build()
+            )
         } else {
             builder.setLoading(false)
             val itemListBuilder = ItemList.Builder()
@@ -965,7 +1061,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     }
 
     private suspend fun createGridItemFromButton(
-        carContext: CarContext?,
+        carContext: Context?,
         button: FAAGridButton,
         templateElementId: String,
         runtimeType: String,
@@ -1003,6 +1099,10 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         runtimeType: String,
         loadingMessage: String? = null,
     ) {
+        // Without a session there is no head unit to show the loading state
+        // on, and the pending state could never be completed/cleared.
+        if (AndroidAutoService.session == null) return
+
         pendingTemplateElementId = templateElementId
         pendingRootGeneration = rootGeneration
         val loading = buildLoadingTemplate(runtimeType, loadingMessage, templateBackButtons[templateElementId] ?: false)
@@ -1055,6 +1155,8 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        if (instance === this) instance = null
+        if (FAAHelpers.flutterPluginBinding === binding) FAAHelpers.flutterPluginBinding = null
         channel.setMethodCallHandler(null)
         eventChannel.setStreamHandler(null)
     }

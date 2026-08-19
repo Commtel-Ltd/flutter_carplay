@@ -6,6 +6,7 @@ import android.util.Base64
 import androidx.car.app.model.CarIcon
 import androidx.core.graphics.drawable.IconCompat
 import io.flutter.FlutterInjector
+import io.flutter.embedding.engine.plugins.FlutterPlugin
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -13,6 +14,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object FAAHelpers {
+    /// Kept so asset/file icons can be resolved via the application context
+    /// before a car session (and its CarContext) exists.
+    var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null
+
     fun makeFCPChannelId(event: String): String {
         return "com.oguzhnatly.flutter_android_auto" + event
     }

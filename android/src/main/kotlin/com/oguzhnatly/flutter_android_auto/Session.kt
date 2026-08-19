@@ -16,6 +16,9 @@ class AndroidAutoSession : Session() {
                 FlutterAndroidAutoPlugin.onAndroidAutoConnectionChange(
                     FAAConnectionTypes.connected
                 )
+                // Any template set before this session existed was built
+                // without a CarContext; rebuild it now that one is available.
+                FlutterAndroidAutoPlugin.onSessionStarted()
                 super.onStart(owner)
             }
 
