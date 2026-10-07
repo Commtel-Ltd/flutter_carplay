@@ -185,6 +185,7 @@ const svgIgnoredKeys = <String>{
   'imageSize',
   'trailingImageSize',
   'gridImageSizes',
+  'largeImage',
 };
 
 /// The sibling keys under which the walker attaches rasterized bytes (e.g.

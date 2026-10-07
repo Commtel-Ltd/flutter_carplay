@@ -67,6 +67,8 @@ class CPGridButton {
   )?
   onPressWithCompletion;
 
+  bool isEnabled;
+
   /// Creates [CPGridButton]
   CPGridButton({
     required this.titleVariants,
@@ -77,6 +79,7 @@ class CPGridButton {
     this.loadingImageTint,
     this.onPress,
     this.onPressWithCompletion,
+    this.isEnabled = true,
     String? id,
   }) : _elementId = id ?? const Uuid().v4() {
     if (onPress != null && onPressWithCompletion != null) {
@@ -95,10 +98,15 @@ class CPGridButton {
       'loadingImageTint': loadingImageTint!.toJson(),
     'onPress': onPress != null || onPressWithCompletion != null,
     'usesLoading': onPressWithCompletion != null,
+    'isEnabled': isEnabled,
     'runtimeType': 'FCPGridButton',
   };
 
   String get uniqueId {
     return _elementId;
+  }
+
+  void setEnabled(bool enabled) {
+    isEnabled = enabled;
   }
 }

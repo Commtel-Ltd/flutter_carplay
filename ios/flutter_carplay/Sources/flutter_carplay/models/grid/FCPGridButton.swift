@@ -15,6 +15,7 @@ class FCPGridButton {
   private let imageSize: FCPImageSize
   private let isOnPressListenerActive: Bool
   private let usesLoading: Bool
+  private let isEnabled: Bool
   private let imageLoader: ImageLoader
   private let loadingImage: String?
   private let loadingImageData: FlutterStandardTypedData?
@@ -37,6 +38,7 @@ class FCPGridButton {
     imageSize = FCPImageSize(from: obj["imageSize"] as? [String: Any])
     isOnPressListenerActive = obj["onPress"] as? Bool ?? false
     usesLoading = obj["usesLoading"] as? Bool ?? false
+    isEnabled = obj["isEnabled"] as? Bool ?? true
     loadingImage = obj["loadingImage"] as? String
     loadingImageData = obj["loadingImageData"] as? FlutterStandardTypedData
     loadingImageTint = FCPImageTint(from: obj["loadingImageTint"] as? [String: Any])
@@ -62,7 +64,7 @@ class FCPGridButton {
       self?.onMain { $0.handlePress() }
     }
     _super = button
-    button.isEnabled = true
+    button.isEnabled = isEnabled
 
     if #available(iOS 26.0, *), bytesImage == nil {
       imageLoader(image, nil, imageTint) { [weak self] image in

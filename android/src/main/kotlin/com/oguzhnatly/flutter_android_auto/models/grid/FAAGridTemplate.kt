@@ -5,6 +5,7 @@ data class FAAGridTemplate(
     val title: String,
     val buttons: List<FAAGridButton>,
     val emptyViewTitleVariants: List<String>,
+    val headerAction: FAAHeaderAction? = null,
 ) {
     companion object {
         fun fromJson(map: Map<String, Any?>): FAAGridTemplate {
@@ -17,8 +18,11 @@ data class FAAGridTemplate(
             } ?: emptyList()
             val emptyViewTitleVariants = (map["emptyViewTitleVariants"] as? List<*>)
                 ?.filterIsInstance<String>() ?: emptyList()
+            val headerAction = (map["headerAction"] as? Map<*, *>)
+                ?.mapKeys { entry -> entry.key.toString() }
+                ?.let { FAAHeaderAction.fromJson(it) }
 
-            return FAAGridTemplate(elementId, title, buttons, emptyViewTitleVariants)
+            return FAAGridTemplate(elementId, title, buttons, emptyViewTitleVariants, headerAction)
         }
     }
 }

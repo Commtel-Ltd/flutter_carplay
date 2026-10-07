@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../header_action.dart';
 import '../template.dart';
 import 'list_section.dart';
 
@@ -32,6 +33,8 @@ class AAListTemplate implements AATemplate {
   /// Takes precedence over [systemIcon] when set.
   final String? iconUrl;
 
+  final AAHeaderAction? headerAction;
+
   AAListTemplate({
     required this.title,
     required this.sections,
@@ -39,6 +42,7 @@ class AAListTemplate implements AATemplate {
     this.tabTitle,
     this.systemIcon,
     this.iconUrl,
+    this.headerAction,
     String? id,
   }) : assert(
          _hasValidSelectableList(sections),
@@ -80,6 +84,7 @@ class AAListTemplate implements AATemplate {
     'tabTitle': tabTitle,
     'systemIcon': systemIcon,
     'iconUrl': iconUrl,
+    'headerAction': headerAction?.toJson(),
   };
 
   void updateSections(List<AAListSection> newSections) {
