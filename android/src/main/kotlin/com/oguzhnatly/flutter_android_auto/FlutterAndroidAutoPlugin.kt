@@ -4,6 +4,7 @@ import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
 import androidx.car.app.model.Action
+import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.CarText
@@ -774,7 +775,9 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
 
         val headerAction = template.headerAction
         if (headerAction != null) {
-            builder.setHeaderAction(buildHeaderAction(headerAction))
+            builder.setActionStrip(
+                ActionStrip.Builder().addAction(buildHeaderAction(headerAction)).build()
+            )
         } else if (addBackButton) {
             builder.setHeaderAction(Action.BACK)
         }
@@ -934,7 +937,9 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
 
         val headerAction = template.headerAction
         if (headerAction != null) {
-            builder.setHeaderAction(buildHeaderAction(headerAction))
+            builder.setActionStrip(
+                ActionStrip.Builder().addAction(buildHeaderAction(headerAction)).build()
+            )
         } else if (addBackButton) {
             builder.setHeaderAction(Action.BACK)
         }
@@ -998,7 +1003,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             // no longer available.
             buildGridItemLoadingTemplate(templateElementId, buttonElementId, loadingMessage, addBackButton)
         } else {
-            buildLoadingTemplate(runtimeType, loadingMessage, addBackButton)
+            buildLoadingTemplate(runtimeType, loadingMessage, addBackButton, templatesByElementId[templateElementId])
         }
 
         if (currentTabBarData != null && currentTabBarData!!.tabs.any { it.elementId == templateElementId }) {
@@ -1032,7 +1037,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         val buttons = data?.get("buttons") as? List<*>
         val index = buttons?.indexOfFirst { (it as? Map<*, *>)?.get("_elementId") == buttonElementId } ?: -1
         if (normal == null || index < 0) {
-            return buildLoadingTemplate("FAAGridTemplate", loadingMessage, addBackButton)
+            return buildLoadingTemplate("FAAGridTemplate", loadingMessage, addBackButton, normal)
         }
         return buildGridLoadingTemplate(normal, index, loadingMessage)
     }
@@ -1042,21 +1047,32 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         runtimeType: String,
         loadingMessage: String?,
         addBackButton: Boolean,
+        normal: Template? = null,
     ): Template {
         return if (runtimeType == "FAAGridTemplate") {
+            val src = normal as? GridTemplate
             GridTemplate.Builder()
                 .setLoading(true)
                 .apply {
                     if (!loadingMessage.isNullOrBlank()) setTitle(loadingMessage)
-                    if (addBackButton) setHeaderAction(Action.BACK)
+                    else src?.title?.let { setTitle(it.toString()) }
+                    val header = src?.headerAction
+                    if (header != null) setHeaderAction(header)
+                    else if (addBackButton) setHeaderAction(Action.BACK)
+                    src?.actionStrip?.let { setActionStrip(it) }
                 }
                 .build()
         } else {
+            val src = normal as? ListTemplate
             ListTemplate.Builder()
                 .setLoading(true)
                 .apply {
                     if (!loadingMessage.isNullOrBlank()) setTitle(loadingMessage)
-                    if (addBackButton) setHeaderAction(Action.BACK)
+                    else src?.title?.let { setTitle(it.toString()) }
+                    val header = src?.headerAction
+                    if (header != null) setHeaderAction(header)
+                    else if (addBackButton) setHeaderAction(Action.BACK)
+                    src?.actionStrip?.let { setActionStrip(it) }
                 }
                 .build()
         }
