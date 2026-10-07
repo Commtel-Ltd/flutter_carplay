@@ -33,7 +33,6 @@ class AAListTemplate implements AATemplate {
   /// Takes precedence over [systemIcon] when set.
   final String? iconUrl;
 
-  /// Optional custom action shown in the template header.
   final AAHeaderAction? headerAction;
 
   AAListTemplate({

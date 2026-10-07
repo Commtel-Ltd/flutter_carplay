@@ -42,7 +42,6 @@ class AAGridTemplate implements AATemplate {
   /// Takes precedence over [systemIcon] when both are set.
   final String? iconUrl;
 
-  /// Optional custom action shown in the template header.
   final AAHeaderAction? headerAction;
 
   AAGridTemplate({

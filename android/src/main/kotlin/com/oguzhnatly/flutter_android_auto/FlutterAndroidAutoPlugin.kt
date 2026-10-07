@@ -848,7 +848,11 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         if (imageIcon != null) {
             rowBuilder.setImage(
                 imageIcon,
-                if (item.imageTint != null) Row.IMAGE_TYPE_ICON else Row.IMAGE_TYPE_SMALL,
+                when {
+                    item.imageTint != null -> Row.IMAGE_TYPE_ICON
+                    item.largeImage -> Row.IMAGE_TYPE_LARGE
+                    else -> Row.IMAGE_TYPE_SMALL
+                },
             )
         }
 
@@ -1055,7 +1059,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                 .setLoading(true)
                 .apply {
                     if (!loadingMessage.isNullOrBlank()) setTitle(loadingMessage)
-                    else src?.title?.let { setTitle(it.toString()) }
+                    else if (src?.headerAction == null && src?.actionStrip != null) src.title?.let { setTitle(it.toString()) }
                     val header = src?.headerAction
                     if (header != null) setHeaderAction(header)
                     else if (addBackButton) setHeaderAction(Action.BACK)
@@ -1068,7 +1072,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
                 .setLoading(true)
                 .apply {
                     if (!loadingMessage.isNullOrBlank()) setTitle(loadingMessage)
-                    else src?.title?.let { setTitle(it.toString()) }
+                    else if (src?.headerAction == null && src?.actionStrip != null) src.title?.let { setTitle(it.toString()) }
                     val header = src?.headerAction
                     if (header != null) setHeaderAction(header)
                     else if (addBackButton) setHeaderAction(Action.BACK)

@@ -21,7 +21,9 @@ internal fun buildGridLoadingTemplate(normal: GridTemplate, loadingIndex: Int, m
     }
     return GridTemplate.Builder().setSingleList(list.build()).apply {
         if (!message.isNullOrBlank()) setTitle(message)
-        else normal.title?.let { setTitle(it.toString()) }
+        else if (normal.headerAction == null && normal.actionStrip != null) {
+            normal.title?.let { setTitle(it.toString()) }
+        }
         normal.headerAction?.let { setHeaderAction(it) }
         normal.actionStrip?.let { setActionStrip(it) }
     }.build()

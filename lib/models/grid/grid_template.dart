@@ -20,7 +20,6 @@ class CPGridTemplate extends CPTemplate {
   /// iOS 12.0+ | iPadOS 12.0+ | Mac Catalyst 13.1+
   final List<CPGridButton> buttons;
 
-  /// The back button shown in the grid template's navigation bar.
   final CPBarButton? backButton;
 
   /// Creates [CPGridTemplate] in order to display a grid of items as buttons.

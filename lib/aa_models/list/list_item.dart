@@ -29,6 +29,7 @@ class AAListItem {
   /// Supports asset paths, SVG assets, file paths, and network URLs.
   final String? imageUrl;
   final AutoImageTint? imageTint;
+  final bool largeImage;
 
   /// The image displayed on the trailing side of this row when supported by the
   /// Android Auto host.
@@ -51,6 +52,7 @@ class AAListItem {
     String? image,
     String? imageUrl,
     this.imageTint,
+    this.largeImage = false,
     this.trailingImage,
     this.trailingImageTint,
     this.loadingMessage,
@@ -81,6 +83,7 @@ class AAListItem {
     'subtitle': subtitle,
     'imageUrl': imageUrl,
     'imageTint': imageTint?.toJson(),
+    'largeImage': largeImage,
     'trailingImage': trailingImage,
     'trailingImageTint': trailingImageTint?.toJson(),
     'loadingMessage': loadingMessage,

@@ -67,8 +67,6 @@ class CPGridButton {
   )?
   onPressWithCompletion;
 
-  /// A Boolean value that enables and disables the grid button. Defaults to true.
-  /// The change takes effect when the template is next sent to CarPlay.
   bool isEnabled;
 
   /// Creates [CPGridButton]
@@ -108,8 +106,6 @@ class CPGridButton {
     return _elementId;
   }
 
-  /// Updates the enabled state of this grid button. The change takes effect
-  /// when the template is next sent to CarPlay.
   void setEnabled(bool enabled) {
     isEnabled = enabled;
   }

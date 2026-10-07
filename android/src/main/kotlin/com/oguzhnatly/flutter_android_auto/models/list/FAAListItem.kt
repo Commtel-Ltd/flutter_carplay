@@ -7,6 +7,7 @@ data class FAAListItem(
     val imageUrl: String? = null,
     val imageData: ByteArray? = null,
     val imageTint: FAAImageTint? = null,
+    val largeImage: Boolean = false,
     val trailingImage: String? = null,
     val trailingImageData: ByteArray? = null,
     val trailingImageTint: FAAImageTint? = null,
@@ -23,6 +24,7 @@ data class FAAListItem(
             val imageUrl = map["imageUrl"] as? String ?: map["image"] as? String
             val imageData = map["imageData"] as? ByteArray
             val imageTint = FAAImageTint.fromJson(map["imageTint"] as? Map<String, Any?>)
+            val largeImage = map["largeImage"] as? Boolean ?: false
             val trailingImage = map["trailingImage"] as? String
             val trailingImageData = map["trailingImageData"] as? ByteArray
             val trailingImageTint =
@@ -41,6 +43,7 @@ data class FAAListItem(
                 imageUrl,
                 imageData,
                 imageTint,
+                largeImage,
                 trailingImage,
                 trailingImageData,
                 trailingImageTint,
