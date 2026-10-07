@@ -20,6 +20,7 @@ enum class FAAChannelTypes {
     onListSectionSelected,
     onToggleCheckedChange,
     onPaneActionPressed,
+    onHeaderActionPressed,
     onScreenBackButtonPressed,
     setAlert,
     closePresent,

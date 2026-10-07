@@ -700,6 +700,19 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         return rowBuilder.build()
     }
 
+    private fun buildHeaderAction(headerAction: FAAHeaderAction): Action {
+        val builder = Action.Builder().setTitle(headerAction.title)
+        if (headerAction.isOnPressListenerActive) {
+            builder.setOnClickListener {
+                sendEvent(
+                    type = FAAChannelTypes.onHeaderActionPressed.name,
+                    data = mapOf("elementId" to headerAction.elementId),
+                )
+            }
+        }
+        return builder.build()
+    }
+
     private suspend fun createPaneAction(
         carContext: CarContext?,
         action: FAAPaneAction,
@@ -759,7 +772,12 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             }
         }
 
-        if (addBackButton) builder.setHeaderAction(Action.BACK)
+        val headerAction = template.headerAction
+        if (headerAction != null) {
+            builder.setHeaderAction(buildHeaderAction(headerAction))
+        } else if (addBackButton) {
+            builder.setHeaderAction(Action.BACK)
+        }
         return builder.build()
     }
 
@@ -914,7 +932,12 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             builder.setSingleList(itemListBuilder.build())
         }
 
-        if (addBackButton) builder.setHeaderAction(Action.BACK)
+        val headerAction = template.headerAction
+        if (headerAction != null) {
+            builder.setHeaderAction(buildHeaderAction(headerAction))
+        } else if (addBackButton) {
+            builder.setHeaderAction(Action.BACK)
+        }
         return builder.build()
     }
 

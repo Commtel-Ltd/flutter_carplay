@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../header_action.dart';
 import '../template.dart';
 import 'grid_button.dart';
 
@@ -41,6 +42,9 @@ class AAGridTemplate implements AATemplate {
   /// Takes precedence over [systemIcon] when both are set.
   final String? iconUrl;
 
+  /// Optional custom action shown in the template header.
+  final AAHeaderAction? headerAction;
+
   AAGridTemplate({
     required this.title,
     required this.buttons,
@@ -48,6 +52,7 @@ class AAGridTemplate implements AATemplate {
     this.tabTitle,
     this.systemIcon,
     this.iconUrl,
+    this.headerAction,
   }) : _elementId = const Uuid().v4();
 
   @override
@@ -62,5 +67,6 @@ class AAGridTemplate implements AATemplate {
     'tabTitle': tabTitle,
     'systemIcon': systemIcon,
     'iconUrl': iconUrl,
+    'headerAction': headerAction?.toJson(),
   };
 }

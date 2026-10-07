@@ -82,9 +82,28 @@ suspend fun resolveCarIcon(
     if (source.isNullOrEmpty()) return null
 
     return when {
+        source.startsWith("data:") -> loadCarImageFromBase64(source, imageTint)
         source.startsWith("http") -> loadCarImageAsync(source, imageTint)
         source.startsWith("file://") -> loadCarImageFromFile(source, imageTint)
         else -> loadCarImageFromAsset(context, source, imageTint)
+    }
+}
+
+suspend fun loadCarImageFromBase64(
+    dataUri: String,
+    imageTint: FAAImageTint? = null,
+): CarIcon? {
+    return withContext(Dispatchers.IO) {
+        try {
+            val payload = dataUri.substringAfter(',', dataUri)
+            val bytes = android.util.Base64.decode(payload, android.util.Base64.DEFAULT)
+            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                ?: return@withContext null
+            bitmap.toCarIcon(imageTint)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }
 
