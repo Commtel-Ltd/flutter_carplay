@@ -17,6 +17,8 @@ class FCPGridTemplate {
   private var showsTabBadge: Bool = false
   private var buttons: [CPGridButton]
   private var objcButtons: [FCPGridButton]
+  private var objcBackButton: FCPBarButton?
+  private var backButton: CPBarButton?
 
   init(obj: [String: Any]) {
     self.elementId = obj["_elementId"] as! String
@@ -30,6 +32,10 @@ class FCPGridTemplate {
     self.buttons = self.objcButtons.map {
       $0.get
     }
+    if let backButtonData = obj["backButton"] as? [String: Any] {
+      self.objcBackButton = FCPBarButton(obj: backButtonData)
+      self.backButton = self.objcBackButton!.get
+    }
   }
 
   var get: CPTemplate {
@@ -39,6 +45,9 @@ class FCPGridTemplate {
     gridTemplate.showsTabBadge = showsTabBadge
     if let systemIcon = systemIcon {
       resolveTabIcon(systemIcon) { gridTemplate.tabImage = $0 }
+    }
+    if let backButton = backButton {
+      gridTemplate.backButton = backButton
     }
 
     self._super = gridTemplate

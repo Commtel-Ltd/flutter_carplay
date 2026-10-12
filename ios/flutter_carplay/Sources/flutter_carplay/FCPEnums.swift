@@ -19,6 +19,7 @@ enum FCPChannelTypes {
   static let onCarplayConnectionChange = "onCarplayConnectionChange"
   static let setRootTemplate = "setRootTemplate"
   static let forceUpdateRootTemplate = "forceUpdateRootTemplate"
+  static let selectTabBarIndex = "selectTabBarIndex"
   static let updateListTemplateSections = "updateListTemplateSections"
   static let updateTabBarTemplates = "updateTabBarTemplates"
   static let updateInformationTemplateItems = "updateInformationTemplateItems"

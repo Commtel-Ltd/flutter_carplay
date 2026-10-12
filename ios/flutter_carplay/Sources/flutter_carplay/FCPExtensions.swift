@@ -98,18 +98,26 @@ enum ImageSource {
   case url(URL)
   case file(String)
   case flutterAsset(String)
+  case base64(Data)
 }
 
 // String → ImageSource
 extension String {
   func toImageSource() -> ImageSource {
-    if self.starts(with: "http") {
+    if self.starts(with: "data:"), let data = String.decodeBase64DataURI(self) {
+      return .base64(data)
+    } else if self.starts(with: "http") {
       return .url(URL(string: self)!)
     } else if self.starts(with: "file://") {
       return .file(self.replacingOccurrences(of: "file://", with: ""))
     } else {
       return .flutterAsset(self)
     }
+  }
+
+  private static func decodeBase64DataURI(_ s: String) -> Data? {
+    let payload = s.firstIndex(of: ",").map { String(s[s.index(after: $0)...]) } ?? s
+    return Data(base64Encoded: payload, options: .ignoreUnknownCharacters)
   }
 }
 
@@ -192,6 +200,15 @@ func makeUIImage(
           userInfo: [NSLocalizedDescriptionKey: "Failed to decode image at path: \(path)"])
       }
       return image
+
+    case .base64(let data):
+      if let image = UIImage(data: data) {
+        return image
+      } else {
+        throw NSError(
+          domain: "ImageLoadError", code: 5,
+          userInfo: [NSLocalizedDescriptionKey: "Invalid base64 image data"])
+      }
     }
   } catch {
     errorCallback?(error)
@@ -266,6 +283,21 @@ func loadUIImageAsync(
       } catch {
         errorCallback?(error)
         completion(nil)
+      }
+    }
+
+  case .base64(let data):
+    DispatchQueue.global(qos: .userInitiated).async {
+      let image = UIImage(data: data)
+      DispatchQueue.main.async {
+        if let image = image {
+          completion(image)
+        } else {
+          errorCallback?(NSError(
+            domain: "ImageLoadError", code: 5,
+            userInfo: [NSLocalizedDescriptionKey: "Invalid base64 image data"]))
+          completion(nil)
+        }
       }
     }
   }

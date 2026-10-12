@@ -262,6 +262,19 @@ class FlutterCarplay {
     }
   }
 
+  static Future<bool> selectTabBarIndex({
+    required String elementId,
+    required int index,
+  }) async {
+    final bool? isCompleted =
+        await FlutterCarPlayController.flutterToNativeModule(
+          FCPChannelTypes.selectTabBarIndex,
+          <String, dynamic>{'elementId': elementId, 'index': index},
+        );
+
+    return isCompleted ?? false;
+  }
+
   /// It will set the current root template again.
   Future<void> forceUpdateRootTemplate() {
     return FlutterCarPlayController.flutterToNativeModule(

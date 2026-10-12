@@ -5,6 +5,7 @@ data class FAAListTemplate(
     val title: String,
     val sections: List<FAAListSection>,
     val emptyViewTitleVariants: List<String>,
+    val headerAction: FAAHeaderAction? = null,
 ) {
     init {
         val hasSelectableList = sections.any { it.isSelectable }
@@ -24,8 +25,11 @@ data class FAAListTemplate(
             } ?: emptyList()
             val emptyViewTitleVariants = (map["emptyViewTitleVariants"] as? List<*>)
                 ?.filterIsInstance<String>() ?: emptyList()
+            val headerAction = (map["headerAction"] as? Map<*, *>)
+                ?.mapKeys { entry -> entry.key.toString() }
+                ?.let { FAAHeaderAction.fromJson(it) }
 
-            return FAAListTemplate(elementId, title, sections, emptyViewTitleVariants)
+            return FAAListTemplate(elementId, title, sections, emptyViewTitleVariants, headerAction)
         }
     }
 }

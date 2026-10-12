@@ -118,6 +118,17 @@ public class SwiftFlutterCarplayPlugin: NSObject, FlutterPlugin {
         result(completed && error == nil)
       }
       break
+    case FCPChannelTypes.selectTabBarIndex:
+      guard let args = call.arguments as? [String: Any],
+            let elementId = args["elementId"] as? String,
+            let index = args["index"] as? Int
+      else {
+        result(false)
+        return
+      }
+      result(
+        FlutterCarPlaySceneDelegate.selectTabBarIndex(elementId: elementId, index: index))
+      break
     case FCPChannelTypes.updateListTemplateSections:
       guard let args = call.arguments as? [String: Any] else {
         result(false)

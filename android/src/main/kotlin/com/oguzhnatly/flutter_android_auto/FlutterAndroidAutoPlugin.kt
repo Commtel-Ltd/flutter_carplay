@@ -4,6 +4,7 @@ import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.ScreenManager
 import androidx.car.app.model.Action
+import androidx.car.app.model.ActionStrip
 import androidx.car.app.model.CarColor
 import androidx.car.app.model.CarIcon
 import androidx.car.app.model.CarText
@@ -700,6 +701,19 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         return rowBuilder.build()
     }
 
+    private fun buildHeaderAction(headerAction: FAAHeaderAction): Action {
+        val builder = Action.Builder().setTitle(headerAction.title)
+        if (headerAction.isOnPressListenerActive) {
+            builder.setOnClickListener {
+                sendEvent(
+                    type = FAAChannelTypes.onHeaderActionPressed.name,
+                    data = mapOf("elementId" to headerAction.elementId),
+                )
+            }
+        }
+        return builder.build()
+    }
+
     private suspend fun createPaneAction(
         carContext: CarContext?,
         action: FAAPaneAction,
@@ -759,7 +773,14 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             }
         }
 
-        if (addBackButton) builder.setHeaderAction(Action.BACK)
+        val headerAction = template.headerAction
+        if (headerAction != null) {
+            builder.setActionStrip(
+                ActionStrip.Builder().addAction(buildHeaderAction(headerAction)).build()
+            )
+        } else if (addBackButton) {
+            builder.setHeaderAction(Action.BACK)
+        }
         return builder.build()
     }
 
@@ -827,7 +848,11 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         if (imageIcon != null) {
             rowBuilder.setImage(
                 imageIcon,
-                if (item.imageTint != null) Row.IMAGE_TYPE_ICON else Row.IMAGE_TYPE_SMALL,
+                when {
+                    item.imageTint != null -> Row.IMAGE_TYPE_ICON
+                    item.largeImage -> Row.IMAGE_TYPE_LARGE
+                    else -> Row.IMAGE_TYPE_SMALL
+                },
             )
         }
 
@@ -914,7 +939,14 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             builder.setSingleList(itemListBuilder.build())
         }
 
-        if (addBackButton) builder.setHeaderAction(Action.BACK)
+        val headerAction = template.headerAction
+        if (headerAction != null) {
+            builder.setActionStrip(
+                ActionStrip.Builder().addAction(buildHeaderAction(headerAction)).build()
+            )
+        } else if (addBackButton) {
+            builder.setHeaderAction(Action.BACK)
+        }
         return builder.build()
     }
 
@@ -975,7 +1007,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
             // no longer available.
             buildGridItemLoadingTemplate(templateElementId, buttonElementId, loadingMessage, addBackButton)
         } else {
-            buildLoadingTemplate(runtimeType, loadingMessage, addBackButton)
+            buildLoadingTemplate(runtimeType, loadingMessage, addBackButton, templatesByElementId[templateElementId])
         }
 
         if (currentTabBarData != null && currentTabBarData!!.tabs.any { it.elementId == templateElementId }) {
@@ -1009,7 +1041,7 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         val buttons = data?.get("buttons") as? List<*>
         val index = buttons?.indexOfFirst { (it as? Map<*, *>)?.get("_elementId") == buttonElementId } ?: -1
         if (normal == null || index < 0) {
-            return buildLoadingTemplate("FAAGridTemplate", loadingMessage, addBackButton)
+            return buildLoadingTemplate("FAAGridTemplate", loadingMessage, addBackButton, normal)
         }
         return buildGridLoadingTemplate(normal, index, loadingMessage)
     }
@@ -1019,21 +1051,32 @@ class FlutterAndroidAutoPlugin : FlutterPlugin, EventChannel.StreamHandler {
         runtimeType: String,
         loadingMessage: String?,
         addBackButton: Boolean,
+        normal: Template? = null,
     ): Template {
         return if (runtimeType == "FAAGridTemplate") {
+            val src = normal as? GridTemplate
             GridTemplate.Builder()
                 .setLoading(true)
                 .apply {
                     if (!loadingMessage.isNullOrBlank()) setTitle(loadingMessage)
-                    if (addBackButton) setHeaderAction(Action.BACK)
+                    else if (src?.headerAction == null && src?.actionStrip != null) src.title?.let { setTitle(it.toString()) }
+                    val header = src?.headerAction
+                    if (header != null) setHeaderAction(header)
+                    else if (addBackButton) setHeaderAction(Action.BACK)
+                    src?.actionStrip?.let { setActionStrip(it) }
                 }
                 .build()
         } else {
+            val src = normal as? ListTemplate
             ListTemplate.Builder()
                 .setLoading(true)
                 .apply {
                     if (!loadingMessage.isNullOrBlank()) setTitle(loadingMessage)
-                    if (addBackButton) setHeaderAction(Action.BACK)
+                    else if (src?.headerAction == null && src?.actionStrip != null) src.title?.let { setTitle(it.toString()) }
+                    val header = src?.headerAction
+                    if (header != null) setHeaderAction(header)
+                    else if (addBackButton) setHeaderAction(Action.BACK)
+                    src?.actionStrip?.let { setActionStrip(it) }
                 }
                 .build()
         }
